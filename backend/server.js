@@ -57,7 +57,6 @@ app.post('/api/login', async (req, res) => {
     }
 
     try {
-        // First find user by email only
         const user = await QuickcartModel.findOne({ email });
         console.log('User found:', user);
   
@@ -65,14 +64,16 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: "Invalid email or password" });
         }
 
-        // Check if password matches
-        if (user.password === password) {  // In production, use proper password hashing
+        if (user.password === password) {  // Reminder: Use hashing in production
             res.status(200).json({
                 message: 'Login successful',
                 user: {
                     id: user._id,
                     firstName: user.firstName,
-                    email: user.email
+                    lastName: user.lastName,    // Optional if available
+                    email: user.email,
+                    phone: user.phone,          // ✅ Send phone
+                    address: user.address       // ✅ Send address
                 }
             });
         } else {
@@ -83,6 +84,7 @@ app.post('/api/login', async (req, res) => {
         res.status(500).json({ error: "Server error while logging in" });
     }
 });
+
 
 // Test route
 app.get('/', (req, res) => {

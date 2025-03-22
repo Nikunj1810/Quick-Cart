@@ -81,14 +81,19 @@ const Login = () => {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col items-center animate-fade-in">
             <div className="w-16 h-16 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-            <p className="mt-4 text-lg font-semibold text-gray-700">Logging in...</p>
+            <p className="mt-4 text-lg font-semibold text-gray-700">
+              Logging in...
+            </p>
           </div>
         </div>
       )}
 
       <div className="container mx-auto py-12 px-4 flex flex-col items-center">
         <div className="flex items-center gap-2 text-sm mb-8">
-          <Link to="/" className="text-gray-500 hover:text-black transition-colors">
+          <Link
+            to="/"
+            className="text-gray-500 hover:text-black transition-colors"
+          >
             Home
           </Link>
           <span className="text-gray-400">/</span>
@@ -99,15 +104,22 @@ const Login = () => {
           <h1 className="text-3xl font-extrabold text-gray-800 mb-2 text-center">
             Welcome Back!
           </h1>
-          <p className="text-gray-500 text-center mb-6">Log in to your account to continue</p>
+          <p className="text-gray-500 text-center mb-6">
+            Log in to your account to continue
+          </p>
 
           {errorMessage && (
-            <p className="text-red-600 text-sm mb-4 bg-red-100 p-2 rounded">{errorMessage}</p>
+            <p className="text-red-600 text-sm mb-4 bg-red-100 p-2 rounded">
+              {errorMessage}
+            </p>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Email Address
               </label>
               <Input
@@ -123,7 +135,10 @@ const Login = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Password
               </label>
               <Input
@@ -144,7 +159,10 @@ const Login = () => {
                 checked={rememberMe}
                 onCheckedChange={(checked) => setRememberMe(checked === true)}
               />
-              <label htmlFor="remember-me" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="remember-me"
+                className="text-sm font-medium text-gray-700"
+              >
                 Keep me logged in
               </label>
             </div>
@@ -157,7 +175,9 @@ const Login = () => {
               disabled={isLoading}
             >
               {isLoading ? "Logging in..." : "EMAIL LOGIN"}
-              {!isLoading && <ArrowRight className="ml-2 h-5 w-5 animate-bounce" />}
+              {!isLoading && (
+                <ArrowRight className="ml-2 h-5 w-5 animate-bounce" />
+              )}
             </Button>
           </form>
 
@@ -171,16 +191,18 @@ const Login = () => {
           </div>
 
           <div className="mt-8 border-t border-gray-200 pt-6 text-center">
-            <h2 className="text-lg font-medium text-gray-800 mb-2">New Member?</h2>
-            <Link to="/register">
-              <Button
-                variant="outline"
-                className="w-full border-gray-300 hover:border-blue-500 hover:bg-blue-100 text-gray-700 transition-all duration-300"
-              >
-                Create an Account
-              </Button>
-            </Link>
-          </div>
+  <h2 className="text-sm font-medium text-gray-800 mb-2">Don't have an account?</h2>
+  <Link to="/register">
+  <Button
+  variant="outline"
+  className="w-full border-gray-300 hover:border-blue-500 hover:bg-blue-100 text-gray-700 transition-all duration-300"
+>
+  Sign Up
+</Button>
+
+  </Link>
+</div>
+
         </div>
       </div>
     </MainLayout>

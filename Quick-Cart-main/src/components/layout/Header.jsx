@@ -1,6 +1,13 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, User, X, Search, Menu, LayoutDashboard } from "lucide-react";
+import {
+  ShoppingCart,
+  User,
+  X,
+  Search,
+  Menu,
+  LayoutDashboard,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/context/CartContext";
 import { useUser } from "@/context/UserContext";
@@ -24,9 +31,12 @@ const Header = () => {
       {showPromo && (
         <div className="bg-black text-white py-2 px-4 flex justify-center items-center relative text-center">
           <p className="text-xs sm:text-sm font-medium">
-            Sign up and get 20% off your first order.
-            <Link to="/register" className="underline ml-1">Sign Up Now</Link>
+            Our Spring Sale is live! Don’t miss out on exclusive deals.
+            <Link to="/shop" className="underline ml-1">
+              Shop Now
+            </Link>
           </p>
+
           <button
             onClick={() => setShowPromo(false)}
             className="absolute right-2 sm:right-4"
@@ -41,8 +51,8 @@ const Header = () => {
         <div className="container mx-auto flex items-center justify-between px-4">
           {/* Logo and Nav */}
           <div className="flex items-center gap-4 sm:gap-8">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="group flex-shrink-0"
               onClick={() => window.scrollTo(0, 0)}
             >
@@ -54,9 +64,27 @@ const Header = () => {
             </Link>
 
             <nav className="hidden md:flex items-center gap-6">
-              <Link to="/shop" className="text-sm font-medium hover:text-blue-600" onClick={() => window.scrollTo(0, 0)}>Shop</Link>
-              <Link to="/about-us" className="text-sm font-medium hover:text-blue-600" onClick={() => window.scrollTo(0, 0)}>About Us</Link>
-              <Link to="/contact-us" className="text-sm font-medium hover:text-blue-600" onClick={() => window.scrollTo(0, 0)}>Contact Us</Link>
+              <Link
+                to="/shop"
+                className="text-sm font-medium hover:text-blue-600"
+                onClick={() => window.scrollTo(0, 0)}
+              >
+                Shop
+              </Link>
+              <Link
+                to="/about-us"
+                className="text-sm font-medium hover:text-blue-600"
+                onClick={() => window.scrollTo(0, 0)}
+              >
+                About Us
+              </Link>
+              <Link
+                to="/contact-us"
+                className="text-sm font-medium hover:text-blue-600"
+                onClick={() => window.scrollTo(0, 0)}
+              >
+                Contact Us
+              </Link>
 
               {/* Remove the login button from here */}
 
@@ -108,7 +136,12 @@ const Header = () => {
                 </Button>
               </div>
             ) : (
-              <Button size="icon" variant="ghost" onClick={() => setShowSearch(true)} className="lg:hidden">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setShowSearch(true)}
+                className="lg:hidden"
+              >
                 <Search className="h-5 w-5" />
               </Button>
             )}
@@ -126,8 +159,8 @@ const Header = () => {
             {/* Login Button */}
             {!isAuthenticated ? (
               <Link to="/login">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="px-6 py-2 bg-black text-white border-2 border-black
                     rounded-3xl font-medium transition-all duration-300 
                     hover:bg-white hover:text-black
@@ -138,9 +171,9 @@ const Header = () => {
               </Link>
             ) : (
               <Link to="/profile" aria-label="Profile">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="p-2 rounded-full border-2 border-black transition-all duration-300 
                     hover:bg-black hover:text-white"
                 >
@@ -169,13 +202,34 @@ const Header = () => {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64">
-                <div className="flex flex-col gap-6 mt-8">
-                  <Link to="/shop" className="text-lg font-medium" onClick={() => window.scrollTo(0, 0)}>Shop</Link>
-                  <Link to="/about-us" className="text-lg font-medium" onClick={() => window.scrollTo(0, 0)}>About Us</Link>
-                  <Link to="/contact-us" className="text-lg font-medium" onClick={() => window.scrollTo(0, 0)}>Contact Us</Link>
+              <SheetContent side="left" className="w-64 h-full fixed top-0 left-0 z-50 bg-white">
+              <div className="flex flex-col gap-6 mt-8">
+                  <Link
+                    to="/shop"
+                    className="text-lg font-medium"
+                    onClick={() => window.scrollTo(0, 0)}
+                  >
+                    Shop
+                  </Link>
+                  <Link
+                    to="/about-us"
+                    className="text-lg font-medium"
+                    onClick={() => window.scrollTo(0, 0)}
+                  >
+                    About Us
+                  </Link>
+                  <Link
+                    to="/contact-us"
+                    className="text-lg font-medium"
+                    onClick={() => window.scrollTo(0, 0)}
+                  >
+                    Contact Us
+                  </Link>
                   {isAdminAuthenticated && (
-                    <Link to="/admin/dashboard" className="flex items-center gap-2 text-lg font-medium text-blue-700">
+                    <Link
+                      to="/admin/dashboard"
+                      className="flex items-center gap-2 text-lg font-medium text-blue-700"
+                    >
                       <LayoutDashboard className="h-5 w-5" />
                       Admin Dashboard
                     </Link>

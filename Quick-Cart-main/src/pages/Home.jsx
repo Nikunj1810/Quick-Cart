@@ -7,8 +7,8 @@ import ProductCard from "@/components/product/ProductCard";
 import { getNewArrivals, getFeaturedProducts } from "@/data/products";
 
 const BrandLogo = ({ name }) => (
-  <div className="flex items-center justify-center py-3 grayscale hover:grayscale-0 transition-all">
-    <p className="font-bold tracking-wider text-lg">{name}</p>
+  <div className="flex items-center justify-center py-3 transition-all grayscale hover:grayscale-0">
+    <p className="text-lg font-bold tracking-wider">{name}</p>
   </div>
 );
 
@@ -20,13 +20,13 @@ const Home = () => {
     <MainLayout>
       {/* Hero Section */}
       <section className="relative py-5 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <div className="container px-4 mx-auto">
+          <div className="grid items-center grid-cols-1 gap-8 md:grid-cols-2">
             <div className="relative rounded-2xl overflow-hidden h-[600px]">
               <img 
                 src="/assets/Hero.png" 
                 alt="Fashion models" 
-                className="w-full h-full object-cover" 
+                className="object-cover w-full h-full" 
               />
             </div>
 
@@ -46,16 +46,16 @@ const Home = () => {
                 </div>
               </div>
               
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-center">
+              <h1 className="text-4xl font-bold tracking-tight text-center md:text-6xl">
                 You can have anything you want in life if you dress for it.
               </h1>
               
-              <p className="text-gray-600 text-center text-lg">
+              <p className="text-lg text-center text-gray-600">
                 Browse through our diverse range of meticulously crafted garments, designed to bring out your individuality and cater to your sense of style.
               </p>
               
               <div className="flex justify-center">
-                <Button className="bg-black hover:bg-gray-900 text-white px-12 py-3 rounded-full text-lg">
+                <Button className="px-12 py-3 text-lg text-white bg-black rounded-full hover:bg-gray-900">
                   Shop Now
                 </Button>
               </div>
@@ -67,23 +67,23 @@ const Home = () => {
       
       {/* Brands */}
       <section className="py-1 bg-black">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8 items-center">
-            <img src="/assets/prada.png" alt="prada" className="h-8 mx-auto object-contain" />
-            <img src="/assets/mufti.png" alt="Mufti" className="h-14 w-19 mx-auto object-contain" />
-            <img src="/assets/vanheusen.png" alt="Van Heusen" className="h-20 w-44 mx-auto object-contain" />
-            <img src="/assets/calvin.png" alt="Calvin Klein" className="h-8 mx-auto object-contain" />
-            <img src="/assets/gucci.png" alt="Gucci" className="h-12 mx-auto object-contain" />
+        <div className="container px-4 mx-auto">
+          <div className="grid items-center grid-cols-2 gap-8 sm:grid-cols-3 md:grid-cols-5">
+            <img src="/assets/prada.png" alt="prada" className="object-contain h-8 mx-auto" />
+            <img src="/assets/mufti.png" alt="Mufti" className="object-contain mx-auto h-14 w-19" />
+            <img src="/assets/vanheusen.png" alt="Van Heusen" className="object-contain h-20 mx-auto w-44" />
+            <img src="/assets/calvin.png" alt="Calvin Klein" className="object-contain h-8 mx-auto" />
+            <img src="/assets/gucci.png" alt="Gucci" className="object-contain h-12 mx-auto" />
           </div>
         </div>
       </section>
 
       {/* New Arrivals */}
       <section className="py-16">
-        <div className="container mx-auto px-4">
-          <h1 className="text-5xl font-extrabold mb-8 uppercase text-center">New Arrivals</h1>
+        <div className="container px-4 mx-auto">
+          <h1 className="mb-8 text-5xl font-extrabold text-center uppercase">New Arrivals</h1>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
             {newArrivals.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -92,7 +92,7 @@ const Home = () => {
           <div className="mt-8 text-center">
             <Link to="/new-arrivals">
               <Button variant="outline" className="gap-2">
-                View All <ArrowRight className="h-4 w-4" />
+                View All <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
           </div>
@@ -101,10 +101,10 @@ const Home = () => {
       
       {/* Top Selling */}
       <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-8 lowercase">top selling</h2>
+        <div className="container px-4 mx-auto">
+          <h2 className="mb-8 text-2xl font-bold lowercase">top selling</h2>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
             {topSelling.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -113,7 +113,7 @@ const Home = () => {
           <div className="mt-8 text-center">
             <Link to="/top-selling">
               <Button variant="outline" className="gap-2">
-                View All <ArrowRight className="h-4 w-4" />
+                View All <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
           </div>
@@ -122,35 +122,35 @@ const Home = () => {
       
       {/* Browse by Style */}
       <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="bg-gray-100 p-8 rounded-lg">
-            <h2 className="text-2xl font-bold mb-8">BROWSE BY dress STYLE</h2>
+        <div className="container px-4 mx-auto">
+          <div className="p-8 bg-gray-100 rounded-lg">
+            <h2 className="mb-8 text-2xl font-bold">BROWSE BY dress STYLE</h2>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <Link to="/category/casual" className="bg-white rounded-lg p-6 hover:shadow-md transition-shadow">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+              <Link to="/category/casual" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
                 <div className="flex flex-col items-center space-y-4">
-                  <img src="" alt="Casual style" className="w-full h-40 object-cover rounded-md" />
+                  <img src="/assets/casual.png" alt="Casual style" className="object-cover w-full h-40 rounded-md" />
                   <h3 className="text-lg font-medium">Casual</h3>
                 </div>
               </Link>
               
-              <Link to="/category/formal" className="bg-white rounded-lg p-6 hover:shadow-md transition-shadow">
+              <Link to="/category/formal" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
                 <div className="flex flex-col items-center space-y-4">
-                  <img src="" alt="Formal style" className="w-full h-40 object-cover rounded-md" />
+                  <img src="/assets/formal.png" alt="Formal style" className="object-cover w-full h-40 rounded-md" />
                   <h3 className="text-lg font-medium">Formal</h3>
                 </div>
               </Link>
               
-              <Link to="/category/party" className="bg-white rounded-lg p-6 hover:shadow-md transition-shadow">
+              <Link to="/category/party" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
                 <div className="flex flex-col items-center space-y-4">
-                  <img src="" alt="Party style" className="w-full h-40 object-cover rounded-md" />
+                  <img src="/assets/party.png" alt="Party style" className="object-cover w-full h-40 rounded-md" />
                   <h3 className="text-lg font-medium">Party</h3>
                 </div>
               </Link>
               
-              <Link to="/category/gym" className="bg-white rounded-lg p-6 hover:shadow-md transition-shadow">
+              <Link to="/category/gym" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
                 <div className="flex flex-col items-center space-y-4">
-                  <img src="" alt="Gym style" className="w-full h-40 object-cover rounded-md" />
+                  <img src="/assets/gym.png" alt="Gym style" className="object-cover w-full h-40 rounded-md" />
                   <h3 className="text-lg font-medium">Gym</h3>
                 </div>
               </Link>
@@ -161,13 +161,13 @@ const Home = () => {
       
       {/* Testimonials */}
       <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-8">OUR HAPPY CUSTOMERS</h2>
+        <div className="container px-4 mx-auto">
+          <h2 className="mb-8 text-2xl font-bold">OUR HAPPY CUSTOMERS</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-gray-50 p-6 rounded-lg">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="p-6 rounded-lg bg-gray-50">
               <div className="flex items-start gap-4 mb-4">
-                <div className="bg-green-500 text-white rounded-full h-8 w-8 flex items-center justify-center">
+                <div className="flex items-center justify-center w-8 h-8 text-white bg-green-500 rounded-full">
                   S
                 </div>
                 <div>
@@ -180,9 +180,9 @@ const Home = () => {
               </p>
             </div>
             
-            <div className="bg-gray-50 p-6 rounded-lg">
+            <div className="p-6 rounded-lg bg-gray-50">
               <div className="flex items-start gap-4 mb-4">
-                <div className="bg-blue-500 text-white rounded-full h-8 w-8 flex items-center justify-center">
+                <div className="flex items-center justify-center w-8 h-8 text-white bg-blue-500 rounded-full">
                   A
                 </div>
                 <div>
@@ -195,9 +195,9 @@ const Home = () => {
               </p>
             </div>
             
-            <div className="bg-gray-50 p-6 rounded-lg">
+            <div className="p-6 rounded-lg bg-gray-50">
               <div className="flex items-start gap-4 mb-4">
-                <div className="bg-purple-500 text-white rounded-full h-8 w-8 flex items-center justify-center">
+                <div className="flex items-center justify-center w-8 h-8 text-white bg-purple-500 rounded-full">
                   J
                 </div>
                 <div>

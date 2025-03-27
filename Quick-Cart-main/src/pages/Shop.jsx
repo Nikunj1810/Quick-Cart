@@ -2,8 +2,6 @@ import React from "react";
 import { useParams } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import ProductGrid from "@/components/product/ProductGrid";
-import AdminQuickAccess from "@/components/admin/AdminQuickAccess";
-import AdminLoginPrompt from "@/components/admin/AdminLoginPrompt";
 import { useAdmin } from "@/context/AdminContext";
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -112,8 +110,7 @@ const Shop = () => {
           </div>
         </div>
       </div>
-      
-      {!isAdminAuthenticated && <AdminLoginPrompt />}
+  
     </MainLayout>
   );
 };

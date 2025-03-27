@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from 'cors';
 import { connectDB } from "./config/db.js";
 import QuickcartModel from "./models/register.model.js";
+import AdminModel from "./models/admin.model.js";
 
 dotenv.config();
 
@@ -49,49 +50,74 @@ app.post('/api/register', async (req, res) => {
 
 // Login API
 app.post('/api/login', async (req, res) => {
-    console.log('Login request received:', req.body);
-    const { email, password } = req.body;
-  
-    if (!email || !password) {
-        return res.status(400).json({ error: "Email and password are required" });
-    }
-
     try {
-        const user = await QuickcartModel.findOne({ email });
-        console.log('User found:', user);
-  
+        const { email, password } = req.body;
+        const user = await QuickcartModel.findOne({ email, password });
+        
         if (!user) {
-            return res.status(401).json({ error: "Invalid email or password" });
+            return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        if (user.password === password) {  // Reminder: Use hashing in production
-            res.status(200).json({
-                message: 'Login successful',
-                user: {
-                    id: user._id,
-                    firstName: user.firstName,
-                    lastName: user.lastName,    // Optional if available
-                    email: user.email,
-                    phone: user.phone,          // ✅ Send phone
-                    address: user.address       // ✅ Send address
-                }
-            });
-        } else {
-            res.status(401).json({ error: "Invalid email or password" });
-        }
+        res.json({
+            message: 'Login successful',
+            user: {
+                id: user._id,
+                firstName: user.firstName,
+                email: user.email
+            },
+            token: 'user_token'
+        });
     } catch (err) {
         console.error('Login error:', err);
-        res.status(500).json({ error: "Server error while logging in" });
+        res.status(500).json({ error: 'Failed to login' });
     }
 });
 
+// Admin Login API
+app.post('/api/admin/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const admin = await AdminModel.findOne({ email, password });
+        
+        if (!admin) {
+            return res.status(401).json({ error: 'Invalid admin credentials' });
+        }
 
-// Test route
-app.get('/', (req, res) => {
-    res.send('Hello from the backend server!');
+        res.json({
+            message: 'Admin login successful',
+            admin: {
+                id: admin._id,
+                email: admin.email
+            },
+            token: 'admin_token'
+        });
+    } catch (err) {
+        console.error('Admin login error:', err);
+        res.status(500).json({ error: 'Failed to login' });
+    }
 });
 
-app.listen(5000, () => {
+const PORT = process.env.PORT || 5000;
+// Create default admin user
+const createDefaultAdmin = async () => {
+    try {
+        const defaultAdmin = {
+            email: 'admin@quickcart.com',
+            password: 'admin123'
+        };
+
+        const existingAdmin = await AdminModel.findOne({ email: defaultAdmin.email });
+        if (!existingAdmin) {
+            await AdminModel.create(defaultAdmin);
+            console.log('Default admin user created successfully');
+        }
+    } catch (error) {
+        console.error('Error creating default admin:', error);
+    }
+};
+
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
     connectDB();
-    console.log("Server is running on port 5000");
+    createDefaultAdmin();
 });

@@ -169,9 +169,8 @@ const Login = () => {
 
             <Button
               type="submit"
-              className={`w-full bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-800 hover:to-blue-950 text-white py-3 rounded-lg flex items-center justify-center transition-all duration-300 transform ${
-                isLoading ? "opacity-50 cursor-not-allowed" : "hover:scale-105"
-              }`}
+              className={`w-full bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-800 hover:to-blue-950 text-white py-3 rounded-lg flex items-center justify-center transition-all duration-300 transform ${isLoading ? "opacity-50 cursor-not-allowed" : "hover:scale-105"
+                }`}
               disabled={isLoading}
             >
               {isLoading ? "Logging in..." : "EMAIL LOGIN"}
@@ -179,6 +178,15 @@ const Login = () => {
                 <ArrowRight className="ml-2 h-5 w-5 animate-bounce" />
               )}
             </Button>
+            <Link to="/admin/login">
+              <Button
+                variant="outline"
+                className="w-full mt-3 border-gray-300 hover:border-red-500 hover:bg-red-100 text-gray-700 transition-all duration-300"
+              >
+                Admin Login
+              </Button>
+            </Link>
+
           </form>
 
           <div className="text-center mt-4">
@@ -191,17 +199,17 @@ const Login = () => {
           </div>
 
           <div className="mt-8 border-t border-gray-200 pt-6 text-center">
-  <h2 className="text-sm font-medium text-gray-800 mb-2">Don't have an account?</h2>
-  <Link to="/register">
-  <Button
-  variant="outline"
-  className="w-full border-gray-300 hover:border-blue-500 hover:bg-blue-100 text-gray-700 transition-all duration-300"
->
-  Sign Up
-</Button>
+            <h2 className="text-sm font-medium text-gray-800 mb-2">Don't have an account?</h2>
+            <Link to="/register">
+              <Button
+                variant="outline"
+                className="w-full border-gray-300 hover:border-blue-500 hover:bg-blue-100 text-gray-700 transition-all duration-300"
+              >
+                Sign Up
+              </Button>
 
-  </Link>
-</div>
+            </Link>
+          </div>
 
         </div>
       </div>

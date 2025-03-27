@@ -17,13 +17,13 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-gray-100 pt-12 pb-6">
-      <div className="container mx-auto px-4">
+    <footer className="pt-12 pb-6 bg-gray-100">
+      <div className="container px-4 mx-auto">
         {/* Newsletter Section */}
-        <div className="bg-black text-white p-8 rounded-lg mb-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <div className="p-8 mb-12 text-white bg-black rounded-lg">
+          <div className="grid items-center grid-cols-1 gap-8 md:grid-cols-2">
             <div>
-              <h3 className="text-2xl font-bold mb-2">STAY UPTO DATE ABOUT OUR LATEST OFFERS</h3>
+              <h3 className="mb-2 text-2xl font-bold">STAY UPTO DATE ABOUT OUR LATEST OFFERS</h3>
             </div>
             <div>
               <form className="space-y-3" onSubmit={handleSubscribe}>
@@ -31,13 +31,13 @@ const Footer = () => {
                   <Input
                     type="email"
                     placeholder="Enter your email address"
-                    className="bg-white text-black py-6"
+                    className="py-6 text-black bg-white"
                     required
                   />
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full bg-white text-black hover:bg-gray-200 py-6"
+                  className="w-full py-6 text-black bg-white hover:bg-gray-200"
                 >
                   Subscribe to Newsletter
                 </Button>
@@ -46,42 +46,42 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
+        <div className="grid grid-cols-1 gap-8 mb-12 md:grid-cols-2 lg:grid-cols-5">
           {/* Store Description */}
           <div className="lg:col-span-1">
-            <p className="text-gray-600 mb-4">
+            <p className="mb-4 text-gray-600">
               We have clothes that suits your style and which you're proud to wear. From women to men.
             </p>
             <Link 
               to="/" 
-              className="group flex-shrink-0 inline-block mb-4"
+              className="flex-shrink-0 inline-block mb-4 group"
               onClick={() => window.scrollTo(0, 0)}
             >
               <img
-                src="/assect/logo.png"
+                src="/assets/logo.png"
                 alt="QuickCart Logo"
-                className="h-8 sm:h-10 w-auto rounded-2xl border border-gray-200 shadow-md transition-all duration-300 group-hover:scale-105 group-hover:border-blue-300"
+                className="w-auto h-8 transition-all duration-300 border border-gray-200 shadow-md sm:h-10 rounded-2xl group-hover:scale-105 group-hover:border-blue-300"
               />
             </Link>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-600 hover:text-black">
-                <Twitter className="h-5 w-5" />
+                <Twitter className="w-5 h-5" />
               </a>
               <a href="#" className="text-gray-600 hover:text-black">
-                <Facebook className="h-5 w-5" />
+                <Facebook className="w-5 h-5" />
               </a>
               <a href="#" className="text-gray-600 hover:text-black">
-                <Instagram className="h-5 w-5" />
+                <Instagram className="w-5 h-5" />
               </a>
               <a href="#" className="text-gray-600 hover:text-black">
-                <Github className="h-5 w-5" />
+                <Github className="w-5 h-5" />
               </a>
             </div>
           </div>
 
           {/* Links Columns */}
           <div>
-            <h3 className="font-medium mb-4 uppercase text-sm">COMPANY</h3>
+            <h3 className="mb-4 text-sm font-medium uppercase">COMPANY</h3>
             <ul className="space-y-2">
               <li><Link to="/about" className="text-gray-600 hover:text-black">About</Link></li>
               <li><Link to="/features" className="text-gray-600 hover:text-black">Features</Link></li>
@@ -91,7 +91,7 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="font-medium mb-4 uppercase text-sm">HELP</h3>
+            <h3 className="mb-4 text-sm font-medium uppercase">HELP</h3>
             <ul className="space-y-2">
               <li><Link to="/support" className="text-gray-600 hover:text-black">Customer Support</Link></li>
               <li><Link to="/delivery" className="text-gray-600 hover:text-black">Delivery Details</Link></li>
@@ -101,7 +101,7 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="font-medium mb-4 uppercase text-sm">FAQ</h3>
+            <h3 className="mb-4 text-sm font-medium uppercase">FAQ</h3>
             <ul className="space-y-2">
               <li><Link to="/account" className="text-gray-600 hover:text-black">Account</Link></li>
               <li><Link to="/deliveries" className="text-gray-600 hover:text-black">Manage Deliveries</Link></li>
@@ -111,7 +111,7 @@ const Footer = () => {
           </div>
           
           <div>
-            <h3 className="font-medium mb-4 uppercase text-sm">RESOURCES</h3>
+            <h3 className="mb-4 text-sm font-medium uppercase">RESOURCES</h3>
             <ul className="space-y-2">
               <li><Link to="/ebooks" className="text-gray-600 hover:text-black">Free eBooks</Link></li>
               <li><Link to="/tutorials" className="text-gray-600 hover:text-black">Development Tutorial</Link></li>
@@ -122,8 +122,8 @@ const Footer = () => {
         </div>
 
         {/* Copyright */}
-        <div className="border-t border-gray-200 pt-6">
-          <p className="text-sm text-gray-600 text-center">
+        <div className="pt-6 border-t border-gray-200">
+          <p className="text-sm text-center text-gray-600">
             Quick Cart © 2000-2025, All Rights Reserved
           </p>
         </div>

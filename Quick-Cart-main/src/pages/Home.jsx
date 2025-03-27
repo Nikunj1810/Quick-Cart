@@ -90,7 +90,7 @@ const Home = () => {
           </div>
           
           <div className="mt-8 text-center">
-            <Link to="/new-arrivals">
+            <Link to="/shop">
               <Button variant="outline" className="gap-2">
                 View All <ArrowRight className="w-4 h-4" />
               </Button>
@@ -111,7 +111,7 @@ const Home = () => {
           </div>
           
           <div className="mt-8 text-center">
-            <Link to="/top-selling">
+          <Link to="/shop">
               <Button variant="outline" className="gap-2">
                 View All <ArrowRight className="w-4 h-4" />
               </Button>

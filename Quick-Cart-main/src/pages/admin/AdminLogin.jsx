@@ -24,9 +24,23 @@ const AdminLogin = () => {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password, rememberMe);
-      if (success) {
+      const response = await fetch("http://localhost:5000/api/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem("admin", JSON.stringify(data.admin));
+        localStorage.setItem("adminToken", data.token);
+        await login(email, password, rememberMe);
         navigate("/admin/dashboard");
+      } else {
+        console.error("Login error:", data.error);
       }
     } catch (error) {
       console.error("Login error:", error);

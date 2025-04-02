@@ -5,11 +5,13 @@ const ProductCard = ({ product }) => {
   return (
     <Link to={`/product/${product.id}`} className="group">
       <div className="overflow-hidden rounded-md mb-3 bg-gray-100">
-        <img
-          src={product.imageUrl}
-          alt={product.name}
-          className="h-60 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-        />
+        {product.imageUrl && (
+          <img
+            src={product.imageUrl.startsWith('http') ? product.imageUrl : `http://localhost:5000${product.imageUrl}`}
+            alt={product.name}
+            className="h-60 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        )}
       </div>
       <h3 className="font-medium text-lg">{product.name}</h3>
       <div className="flex items-center gap-2">

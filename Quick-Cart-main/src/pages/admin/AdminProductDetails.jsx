@@ -6,17 +6,88 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  getAllCategories,
-  getProduct,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-  toggleProductChecked,
-} from "@/services/product-service";
+const getAllCategories = async () => {
+  const response = await fetch('http://localhost:5000/api/categories');
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to fetch categories');
+  }
+  return await response.json();
+};
+
+const getProduct = async (id) => {
+  const response = await fetch(`http://localhost:5000/api/products/${id}`);
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to fetch product');
+  }
+  return await response.json();
+};
+
+const createProduct = async (product, imageFile) => {
+  const formData = new FormData();
+  if (imageFile) {
+    formData.append('image', imageFile);
+  }
+  formData.append('product', JSON.stringify(product));
+
+  const response = await fetch('http://localhost:5000/api/products', {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to create product');
+  }
+  return await response.json();
+};
+
+const updateProduct = async (id, updates, imageFile) => {
+  const formData = new FormData();
+  if (imageFile) {
+    formData.append('image', imageFile);
+  }
+  formData.append('updates', JSON.stringify(updates));
+
+  const response = await fetch(`http://localhost:5000/api/products/${id}`, {
+    method: 'PUT',
+    body: formData
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to update product');
+  }
+  return await response.json();
+};
+
+const deleteProduct = async (id) => {
+  const response = await fetch(`http://localhost:5000/api/products/${id}`, {
+    method: 'DELETE'
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to delete product');
+  }
+};
+
+
+
+const toggleProductChecked = async (id) => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/products/${id}/toggle`, {
+      method: 'PUT'
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to toggle product status');
+    }
+    return await response.json();
+  } catch (error) {
+    throw new Error(`Failed to toggle product status: ${error.message}`);
+  }
+};
 
 const AdminProductDetails = () => {
   const { productId } = useParams();
@@ -49,9 +120,10 @@ const AdminProductDetails = () => {
           }
         }
       } catch (error) {
+        console.error("Error loading product data:", error);
         toast({
           title: "Error",
-          description: "Failed to load data",
+          description: error.message || "Failed to load product data. Please try again.",
           variant: "destructive",
         });
       } finally {
@@ -80,9 +152,10 @@ const AdminProductDetails = () => {
         });
       }
     } catch (error) {
+      console.error("Error saving product:", error);
       toast({
         title: "Error",
-        description: "Failed to save product",
+        description: error.message || "Failed to save product. Please check your input and try again.",
         variant: "destructive",
       });
     }
@@ -99,9 +172,10 @@ const AdminProductDetails = () => {
       });
       navigate("/admin/products");
     } catch (error) {
+      console.error("Error deleting product:", error);
       toast({
         title: "Error",
-        description: "Failed to delete product",
+        description: error.message || "Failed to delete product. Please try again.",
         variant: "destructive",
       });
     }
@@ -120,41 +194,14 @@ const AdminProductDetails = () => {
         });
       }
     } catch (error) {
+      console.error("Error toggling product status:", error);
       toast({
         title: "Error",
-        description: "Failed to update product status",
+        description: error.message || "Failed to update product status. Please try again.",
         variant: "destructive",
       });
     }
   };
-
-  const handleAddCategory = async (name) => {
-    try {
-      const newCategory = await createCategory(name);
-      setCategories([...categories, newCategory]);
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const handleUpdateCategory = async (id, name) => {
-    try {
-      const updatedCategory = await updateCategory(id, name);
-      setCategories(categories.map((cat) => (cat.id === id ? updatedCategory : cat)));
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const handleDeleteCategory = async (id) => {
-    try {
-      await deleteCategory(id);
-      setCategories(categories.filter((cat) => cat.id !== id));
-    } catch (error) {
-      throw error;
-    }
-  };
-
   if (isLoading) {
     return <div className="p-6">Loading...</div>;
   }
@@ -204,12 +251,7 @@ const AdminProductDetails = () => {
         </TabsContent>
 
         <TabsContent value="categories" className="mt-6">
-          <CategoryManager
-            categories={categories}
-            onAddCategory={handleAddCategory}
-            onUpdateCategory={handleUpdateCategory}
-            onDeleteCategory={handleDeleteCategory}
-          />
+          <CategoryManager />
         </TabsContent>
       </Tabs>
     </div>

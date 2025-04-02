@@ -52,7 +52,7 @@ const ProductDetail = () => {
     }
   };
 
-  const thumbnails = [product.imageUrl, product.imageUrl, product.imageUrl];
+  const thumbnails = [`http://localhost:5000${product.imageUrl}`, `http://localhost:5000${product.imageUrl}`, `http://localhost:5000${product.imageUrl}`];
 
   return (
     <MainLayout>
@@ -70,7 +70,7 @@ const ProductDetail = () => {
           <div>
             <div className="mb-4 bg-gray-100 rounded-md">
               <img
-                src={product.imageUrl}
+                src={`http://localhost:5000${product.imageUrl}`}
                 alt={product.name}
                 className="w-full h-auto rounded-md object-cover aspect-square"
               />

@@ -6,12 +6,6 @@ import MainLayout from "@/components/layout/MainLayout";
 import ProductCard from "@/components/product/ProductCard";
 import { getNewArrivals, getFeaturedProducts } from "@/data/products";
 
-const BrandLogo = ({ name }) => (
-  <div className="flex items-center justify-center py-3 transition-all grayscale hover:grayscale-0">
-    <p className="text-lg font-bold tracking-wider">{name}</p>
-  </div>
-);
-
 const Home = () => {
   const newArrivals = getNewArrivals();
   const topSelling = getFeaturedProducts();
@@ -64,7 +58,6 @@ const Home = () => {
         </div>
       </section>
 
-      
       {/* Brands */}
       <section className="py-1 bg-black">
         <div className="container px-4 mx-auto">
@@ -98,7 +91,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-      
       {/* Top Selling */}
       <section className="py-16 bg-gray-50">
         <div className="container px-4 mx-auto">
@@ -111,7 +103,7 @@ const Home = () => {
           </div>
           
           <div className="mt-8 text-center">
-          <Link to="/shop">
+            <Link to="/shop">
               <Button variant="outline" className="gap-2">
                 View All <ArrowRight className="w-4 h-4" />
               </Button>
@@ -119,99 +111,42 @@ const Home = () => {
           </div>
         </div>
       </section>
-      
-      {/* Browse by Style */}
+
       <section className="py-16">
-        <div className="container px-4 mx-auto">
-          <div className="p-8 bg-gray-100 rounded-lg">
-            <h2 className="mb-8 text-2xl font-bold">BROWSE BY dress STYLE</h2>
-            
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
-              <Link to="/category/casual" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
-                <div className="flex flex-col items-center space-y-4">
-                  <img src="/assets/casual.png" alt="Casual style" className="object-cover w-full h-40 rounded-md" />
-                  <h3 className="text-lg font-medium">Casual</h3>
-                </div>
-              </Link>
-              
-              <Link to="/category/formal" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
-                <div className="flex flex-col items-center space-y-4">
-                  <img src="/assets/formal.png" alt="Formal style" className="object-cover w-full h-40 rounded-md" />
-                  <h3 className="text-lg font-medium">Formal</h3>
-                </div>
-              </Link>
-              
-              <Link to="/category/party" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
-                <div className="flex flex-col items-center space-y-4">
-                  <img src="/assets/party.png" alt="Party style" className="object-cover w-full h-40 rounded-md" />
-                  <h3 className="text-lg font-medium">Party</h3>
-                </div>
-              </Link>
-              
-              <Link to="/category/gym" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
-                <div className="flex flex-col items-center space-y-4">
-                  <img src="/assets/gym.png" alt="Gym style" className="object-cover w-full h-40 rounded-md" />
-                  <h3 className="text-lg font-medium">Gym</h3>
-                </div>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+  <div className="container px-4 mx-auto">
+    <div className="p-8 bg-gray-100 rounded-lg">
+      <h2 className="mb-8 text-2xl font-bold text-center uppercase">
+        BROWSE BY dress STYLE
+      </h2>
+
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-2">
+        {[
+          { name: "Casual", img: "/assets/casual.png", link: "/category/casual" },
+          { name: "Formal", img: "/assets/formal.png", link: "/category/formal" },
+          { name: "Party", img: "/assets/party.png", link: "/category/party" },
+          { name: "Gym", img: "/assets/gym.png", link: "/category/gym" },
+        ].map(({ name, img, link }) => (
+          <Link
+            key={name}
+            to={link}
+            className="relative overflow-hidden rounded-2xl bg-white shadow-sm aspect-[2/1]"
+          >
+            <img
+              src={img}
+              alt={name}
+              className="w-full h-full object-cover rounded-2xl"
+            />
+            <h3 className="absolute top-3 left-3 text-lg font-bold text-black">
+              {name}
+            </h3>
+          </Link>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
       
-      {/* Testimonials */}
-      <section className="py-16 bg-white">
-        <div className="container px-4 mx-auto">
-          <h2 className="mb-8 text-2xl font-bold">OUR HAPPY CUSTOMERS</h2>
-          
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="p-6 rounded-lg bg-gray-50">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="flex items-center justify-center w-8 h-8 text-white bg-green-500 rounded-full">
-                  S
-                </div>
-                <div>
-                  <h3 className="font-medium">Sarah M.</h3>
-                  <div className="flex text-yellow-400">★★★★★</div>
-                </div>
-              </div>
-              <p className="text-gray-600">
-                "The experience has been great and all of the clothes I've received have been high quality. I've received numerous compliments!"
-              </p>
-            </div>
-            
-            <div className="p-6 rounded-lg bg-gray-50">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="flex items-center justify-center w-8 h-8 text-white bg-blue-500 rounded-full">
-                  A
-                </div>
-                <div>
-                  <h3 className="font-medium">Alex K.</h3>
-                  <div className="flex text-yellow-400">★★★★★</div>
-                </div>
-              </div>
-              <p className="text-gray-600">
-                "I have been shopping with you for over a year now and I am always impressed with the quality of your products and the range of modern styles at very reasonable prices."
-              </p>
-            </div>
-            
-            <div className="p-6 rounded-lg bg-gray-50">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="flex items-center justify-center w-8 h-8 text-white bg-purple-500 rounded-full">
-                  J
-                </div>
-                <div>
-                  <h3 className="font-medium">James L.</h3>
-                  <div className="flex text-yellow-400">★★★★★</div>
-                </div>
-              </div>
-              <p className="text-gray-600">
-                "The customer service has been the best! I was looking for outfits to match a specific occasion and they really came through. The selection of clothes is great with products for all types of styles."
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
     </MainLayout>
   );
 };

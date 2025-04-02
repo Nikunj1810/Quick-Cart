@@ -1,254 +1,184 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FileInput } from "@/components/ui/file-input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 const productSchema = z.object({
+  prodId: z.string().regex(/^PROD-\d+$/, "Product ID must be in format PROD-XXXX"),
   name: z.string().min(2, "Name must be at least 2 characters"),
   description: z.string().optional(),
+  brand: z.string().min(2, "Brand is required"),
   category: z.string().min(1, "Category is required"),
-  brand: z.string().optional(),
-  sku: z.string().optional(),
-  stock: z.coerce.number().min(0, "Stock cannot be negative").optional(),
+  stockQuantity: z.coerce.number().min(0, "Stock cannot be negative").optional(),
   price: z.coerce.number().min(0, "Price cannot be negative"),
   originalPrice: z.coerce.number().min(0, "Original price cannot be negative").optional(),
-  tags: z.string().optional(),
+  sku: z.string().min(2, "SKU is required"),
+  discountPercentage: z.coerce.number().min(0).max(100, "Discount must be between 0-100").optional(),
 });
 
-const ProductForm = ({ product, onSubmit, onDelete, categories, isNew = false }) => {
+const AddProductForm = ({ onSubmit = () => {} }) => {
+  const [categories, setCategories] = useState([]);
   const [image, setImage] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm({
-    resolver: zodResolver(productSchema),
-    defaultValues: {
-      name: product?.name || "",
-      description: product?.description || "",
-      category: product?.category || "",
-      brand: product?.brand || "",
-      sku: product?.sku || "",
-      stock: product?.stock || 0,
-      price: product?.price || 0,
-      originalPrice: product?.originalPrice || 0,
-      tags: product?.tags?.join(", ") || "",
-    },
-  });
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    clearErrors,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(productSchema) });
 
-  const handleImageUpload = (file) => {
-    const url = URL.createObjectURL(file);
-    setImage({ url, file, id: Date.now().toString() });
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/categories");
+        setCategories(response.data);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: error.response?.data?.message || "Failed to load categories",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    fetchCategories();
+  }, []);
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) {
+      setError("image", { 
+        type: "manual", 
+        message: "Product image is required" 
+      });
+      setImage(null);
+      return;
+    }
+
+    // Check file type
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      setError("image", { 
+        type: "manual", 
+        message: "Invalid file type. Please upload a JPEG, JPG, PNG, or GIF image" 
+      });
+      setImage(null);
+      return;
+    }
+
+    // Check file size (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      setError("image", { 
+        type: "manual", 
+        message: "Image size exceeds 5MB limit. Please upload a smaller file" 
+      });
+      setImage(null);
+      return;
+    }
+
+    clearErrors("image");
+    setImage(file);
   };
 
   const onFormSubmit = async (data) => {
-    try {
-      await onSubmit(data, image?.file);
-      toast({
-        title: isNew ? "Product created" : "Product updated",
-        description: isNew ? "Your product has been created successfully" : "Your product has been updated successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "There was an error processing your request",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!onDelete) return;
+    setIsSubmitting(true);
 
     try {
-      await onDelete();
-      toast({
-        title: "Product deleted",
-        description: "Your product has been deleted successfully",
+      if (!image) {
+        setError("image", { 
+          type: "manual", 
+          message: "Product image is required" 
+        });
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("image", image);
+      
+      // Append all product data to FormData
+      Object.keys(data).forEach(key => {
+        formData.append(key, data[key]);
       });
+      
+      // Send all data in a single request
+      const productRes = await axios.post("http://localhost:5000/api/products", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (productRes.status === 201) {
+        toast({ title: "Success", description: "Product added successfully!" });
+        reset();
+        setImage(null);
+        onSubmit();
+      }
     } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message || "Failed to save product";
       toast({
         title: "Error",
-        description: "There was an error deleting the product",
+        description: errorMessage,
         variant: "destructive",
       });
+      setError("image", { type: "manual", message: errorMessage });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Product Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Type name here" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+      <Input placeholder="Product ID (PROD-XXXX)" {...register("prodId")} />
+      {errors.prodId && <p className="text-red-500 text-sm">{errors.prodId.message}</p>}
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Type description here" rows={5} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <Input placeholder="Product Name" {...register("name")} />
+      {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
 
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.name}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <Textarea placeholder="Description" {...register("description")} />
+      {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
 
-            <FormField
-              control={form.control}
-              name="brand"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Brand Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Type brand name here" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <Input placeholder="Brand" {...register("brand")} />
+      {errors.brand && <p className="text-red-500 text-sm">{errors.brand.message}</p>}
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="sku"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>SKU</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. PROD-123" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      <select {...register("category")}>
+        <option value="">Select Category</option>
+        {categories.map((category) => (
+          <option key={category.id} value={category.name}>{category.name}</option>
+        ))}
+      </select>
+      {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
 
-              <FormField
-                control={form.control}
-                name="stock"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Stock Quantity</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="0" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+      <Input placeholder="Stock Quantity" type="number" {...register("stockQuantity")} />
+      {errors.stockQuantity && <p className="text-red-500 text-sm">{errors.stockQuantity.message}</p>}
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Price</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="0" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      <Input placeholder="Price" type="number" {...register("price")} />
+      {errors.price && <p className="text-red-500 text-sm">{errors.price.message}</p>}
 
-              <FormField
-                control={form.control}
-                name="originalPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Original Price</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="0" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+      <Input placeholder="Original Price" type="number" {...register("originalPrice")} />
+      {errors.originalPrice && <p className="text-red-500 text-sm">{errors.originalPrice.message}</p>}
 
-            <FormField
-              control={form.control}
-              name="tags"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tags (comma separated)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="tag1, tag2, tag3" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+      <Input placeholder="SKU" {...register("sku")} />
+      {errors.sku && <p className="text-red-500 text-sm">{errors.sku.message}</p>}
 
-          <div className="space-y-6">
-            <FileInput
-              label="Product Image"
-              buttonText="Upload Image"
-              preview={image?.url || product?.imageUrl}
-              onFileSelected={handleImageUpload}
-            />
-          </div>
-        </div>
+      <Input placeholder="Discount %" type="number" {...register("discountPercentage")} />
+      {errors.discountPercentage && <p className="text-red-500 text-sm">{errors.discountPercentage.message}</p>}
 
-        <div className="flex justify-end gap-3 mt-8">
-          {!isNew && onDelete && (
-            <Button type="button" variant="destructive" onClick={handleDelete}>
-              DELETE
-            </Button>
-          )}
-          <Button type="button" variant="outline">CANCEL</Button>
-          <Button type="submit">{isNew ? 'SAVE PRODUCT' : 'UPDATE'}</Button>
-        </div>
-      </form>
-    </Form>
+      <Input type="file" onChange={handleImageUpload} accept="image/jpeg,image/png,image/gif" />
+      {errors.image && <p className="text-red-500 text-sm">{errors.image.message}</p>}
+
+      <Button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Saving..." : "Save Product"}
+      </Button>
+    </form>
   );
 };
 
-export default ProductForm;
+export default AddProductForm

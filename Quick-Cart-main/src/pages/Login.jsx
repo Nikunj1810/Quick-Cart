@@ -5,13 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowRight } from "lucide-react";
-import { useUser } from "@/context/UserContext";
 import { useToast } from "@/components/ui/use-toast";
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login } = useUser();
+ 
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,6 +22,21 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMessage("");
+
+    // Basic validation
+    if (!email.trim() || !password.trim()) {
+      setErrorMessage("Please fill in all fields");
+      setIsLoading(false);
+      return;
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErrorMessage("Please enter a valid email address");
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch("http://localhost:5000/api/login", {
@@ -36,14 +50,19 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
+        // Set session expiration
+        const expirationTime = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // 30 days or 24 hours
+        const expirationDate = new Date(Date.now() + expirationTime);
+        
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("token", data.token);
+        localStorage.setItem("sessionExpires", expirationDate.toISOString());
 
         toast({
           title: "Welcome back!",
           description: `Welcome, ${data.user.firstName}! Login successful.`,
           variant: "default",
-          className: "bg-white border-green-500 text-green-500",
+          className: "bg-white border-green-500 text-black",
         });
 
         // Delay for buffer screen visibility
@@ -57,7 +76,7 @@ const Login = () => {
           title: "Error",
           description: data.error || "Invalid email or password",
           variant: "destructive",
-          className: "bg-white border-red-500 text-red-500",
+          className: "bg-white border-red-500 text-black",
         });
         setIsLoading(false);
       }
@@ -68,7 +87,7 @@ const Login = () => {
         title: "Error",
         description: "Something went wrong. Please try again.",
         variant: "destructive",
-        className: "bg-white border-red-500 text-red-500",
+        className: "bg-white border-red-500 text-black",
       });
       setIsLoading(false);
     }
@@ -76,17 +95,15 @@ const Login = () => {
 
   return (
     <MainLayout>
-      {/* Buffer Screen */}
+      {/* Buffer Screen with improved animation and blur effect */}
       {isLoading && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col items-center animate-fade-in">
-            <div className="w-16 h-16 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-            <p className="mt-4 text-lg font-semibold text-gray-700">
-              Logging in...
-            </p>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-md transition-all duration-300 ease-in-out z-50">
+          <div className="bg-white/90 p-8 rounded-xl shadow-2xl flex flex-col items-center transform transition-all duration-500 scale-100 opacity-100">
+            <div className="w-16 h-16 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin transition-all duration-1000 ease-in-out"></div>
+            <p className="mt-4 text-lg font-semibold text-gray-800 animate-pulse">Logging in...</p>
           </div>
         </div>
-      )}
+      )},
 
       <div className="container mx-auto py-12 px-4 flex flex-col items-center">
         <div className="flex items-center gap-2 text-sm mb-8">

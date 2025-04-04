@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { isLoggedIn } from "@/utils/auth";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import ProductGrid from "@/components/product/ProductGrid";
 import { useCart } from "@/context/CartContext";
 import { useAdmin } from "@/context/AdminContext";
@@ -20,6 +29,7 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState(null);
   const [product, setProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -72,6 +82,11 @@ const ProductDetail = () => {
   }
 
   const handleAddToCart = () => {
+    if (!isLoggedIn()) {
+      setShowLoginDialog(true);
+      return;
+    }
+
     if (!selectedSize) {
       toast({
         title: "Error",
@@ -209,11 +224,53 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            <button className="rounded-full bg-black text-white py-3 px-6 hover:bg-gray-800 transition-colors duration-300">
-  Add to Cart
-</button>
+            <button
+              onClick={handleAddToCart}
+              className="rounded-full bg-black text-white py-3 px-6 hover:bg-gray-800 transition-colors duration-300"
+            >
+              Add to Cart
+            </button>
 
-
+            {/* Login Dialog */}
+            <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+              <DialogContent className="sm:max-w-[425px] bg-white/80 backdrop-blur-lg shadow-xl border-0 rounded-2xl">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-bold text-center">Login Required</DialogTitle>
+                  <DialogDescription className="text-center text-base">
+                    Please login or create an account to add items to your cart and start shopping!
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-4 py-4">
+                  <Button
+                    variant="outline"
+                    className="w-full py-6 text-lg font-medium"
+                    onClick={() => {
+                      setShowLoginDialog(false);
+                      navigate("/login");
+                    }}
+                  >
+                    Login to Your Account
+                  </Button>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-sm uppercase">
+                      <span className="bg-white px-2 text-muted-foreground">Or</span>
+                    </div>
+                  </div>
+                  <Button
+                    className="w-full py-6 text-lg font-medium bg-black hover:bg-gray-800 text-white"
+                    onClick={() => {
+                      setShowLoginDialog(false);
+                      navigate("/signup");
+                    }}
+                  >
+                    Create New Account
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             {/* Admin Actions */}
             {isAdmin && (

@@ -116,11 +116,13 @@ if (newArrivals) filter.isNewArrival = true;
 });
 
 // Create a new product
+// Create a new product
 app.post("/api/products", upload.single("image"), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: "Product image is required" });
-        
+
         const productData = JSON.parse(req.body.product);
+
         const product = new ProductModel({
             name: productData.name,
             price: Number(productData.price),
@@ -131,12 +133,15 @@ app.post("/api/products", upload.single("image"), async (req, res) => {
             stockQuantity: Number(productData.stockQuantity) || 0,
             originalPrice: Number(productData.originalPrice) || productData.price,
             discountPercentage: Number(productData.discountPercentage) || 0,
+            sizeType: productData.sizeType || "standard",
+            sizes: Array.isArray(productData.sizes) ? productData.sizes : [],
             imageUrl: `/uploads/${req.file.filename}`
         });
-        
+
         await product.save();
         res.status(201).json({ message: "Product created successfully", product });
     } catch (error) {
+        console.error("Error creating product:", error);
         res.status(500).json({ error: "Failed to create product", details: error.message });
     }
 });
@@ -153,25 +158,46 @@ app.get("/api/products/:id", async (req, res) => {
 });
 
 // Update product
+// Update product
 app.put("/api/products/:id", upload.single("image"), async (req, res) => {
     try {
+        if (!req.body.updates) {
+            return res.status(400).json({ error: "Updates data is required" });
+        }
+
+        let updates;
+        try {
+            updates = JSON.parse(req.body.updates);
+        } catch (error) {
+            return res.status(400).json({ error: "Invalid updates format", details: error.message });
+        }
+
         const product = await ProductModel.findById(req.params.id);
         if (!product) return res.status(404).json({ error: "Product not found" });
-        
-        const updates = req.body;
+
         if (req.file) {
             updates.imageUrl = `/uploads/${req.file.filename}`;
-            if (product.imageUrl) fs.unlinkSync(path.join(__dirname, product.imageUrl));
+            if (product.imageUrl) {
+                const oldImagePath = path.join(__dirname, product.imageUrl);
+                if (fs.existsSync(oldImagePath)) {
+                    fs.unlinkSync(oldImagePath);
+                }
+            }
         }
-        
+
+        // Ensure sizeType and sizes are handled
+        product.sizeType = updates.sizeType || product.sizeType;
+        product.sizes = Array.isArray(updates.sizes) ? updates.sizes : product.sizes;
+
         Object.assign(product, updates);
         await product.save();
+
         res.json({ message: "Product updated successfully", product });
     } catch (error) {
+        console.error("Error updating product:", error);
         res.status(500).json({ error: "Failed to update product", details: error.message });
     }
 });
-
 // Delete product
 app.delete("/api/products/:id", async (req, res) => {
     try {

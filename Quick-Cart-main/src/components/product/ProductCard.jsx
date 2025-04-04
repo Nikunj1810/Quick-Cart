@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const ProductCard = ({ product }) => {
   return (
-    <Link to={`/product/${product.id}`} className="group block">
+    <Link to={`/product/${product._id}`} className="group block">
       <div className="overflow-hidden rounded-xl bg-white shadow-lg border border-gray-200 transition-all duration-300 group-hover:shadow-2xl">
         
         {/* Product Image */}

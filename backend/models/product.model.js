@@ -7,15 +7,27 @@ const counterSchema = new mongoose.Schema({
 });
 const Counter = mongoose.model("Counter", counterSchema);
 
-// Product Schema with custom auto-incremented _id
+// Product Schema
 const productSchema = new mongoose.Schema({
-  _id: { type: String }, // Custom Product ID, auto-generated
+  _id: { type: String }, // Custom Product ID
   name: { type: String, required: true, trim: true },
   description: { type: String, required: true, trim: true },
   category: { type: String, required: true, trim: true },
   brand: { type: String, required: true, trim: true },
   sku: { type: String, required: true, trim: true },
+
+  // New Fields 👇
+  sizeType: { type: String, enum: ['standard', 'waist'], required: true }, 
+  sizes: [
+    {
+      size: { type: String, required: true }, // e.g., "M" or "32"
+      quantity: { type: Number, required: true, min: 0 },
+    }
+  ],
+
+  // Keeping stockQuantity if you want total count (can auto-calculate from sizes if needed)
   stockQuantity: { type: Number, required: true, min: 0 },
+
   price: { type: Number, required: true, min: 0 },
   originalPrice: { 
     type: Number, 
@@ -34,16 +46,15 @@ const productSchema = new mongoose.Schema({
   isNewArrival: { type: Boolean, default: false },
 });
 
-// Middleware to generate auto-incremented custom product ID
+// Auto-increment custom product ID
 productSchema.pre("save", async function (next) {
-  if (!this._id) { // Only generate _id if it's not provided
+  if (!this._id) {
     const counter = await Counter.findByIdAndUpdate(
       { _id: "productId" },
-      { $inc: { seq: 1 } }, // Increment the counter
-      { new: true, upsert: true } // Create counter if not exists
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
     );
-
-    this._id = `PROD-${counter.seq.toString().padStart(4, "0")}`; // Format as PROD-1001
+    this._id = `PROD-${counter.seq.toString().padStart(4, "0")}`;
   }
   next();
 });

@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { RadioGroupItem } from "@/components/ui/radio-group";
 
 const categories = [
   { id: "t-shirts", name: "T-shirts" },
@@ -16,7 +17,7 @@ const categories = [
   { id: "accessories", name: "Accessories" },
 ];
 
-const ProductFilterSidebar = () => {
+const ProductFilterSidebar = ({ categories }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [priceRange, setPriceRange] = useState([0, 100]);
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -29,22 +30,10 @@ const ProductFilterSidebar = () => {
     });
   };
 
-  const handleCategoryChange = (categoryId, checked) => {
-    let newCategories;
-    if (checked) {
-      newCategories = [...selectedCategories, categoryId];
-    } else {
-      newCategories = selectedCategories.filter((id) => id !== categoryId);
-    }
-
-    setSelectedCategories(newCategories);
-
+  const handleCategoryChange = (categoryId) => {
+    setSelectedCategories([categoryId]);
     setSearchParams((params) => {
-      if (newCategories.length > 0) {
-        params.set("categories", newCategories.join(","));
-      } else {
-        params.delete("categories");
-      }
+      params.set("categories", categoryId);
       return params;
     });
   };
@@ -78,23 +67,7 @@ const ProductFilterSidebar = () => {
           <div className="space-y-2">
             <h3 className="font-medium">Categories</h3>
             <div className="space-y-2">
-              {categories.map((category) => (
-                <div key={category.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`category-${category.id}`}
-                    checked={selectedCategories.includes(category.id)}
-                    onCheckedChange={(checked) =>
-                      handleCategoryChange(category.id, checked === true)
-                    }
-                  />
-                  <Label
-                    htmlFor={`category-${category.id}`}
-                    className="text-sm cursor-pointer"
-                  >
-                    {category.name}
-                  </Label>
-                </div>
-              ))}
+              <RadioGroup value={selectedCategories[0]} onValueChange={(value) => handleCategoryChange(value)}> {categories.map((category) => ( <div key={category.id} className="flex items-center space-x-2"> <RadioGroupItem id={`category-${category.id}`} value={category.id} checked={selectedCategories.includes(category.id)} onCheckedChange={() => handleCategoryChange(category.id)} /> <Label htmlFor={`category-${category.id}`} className="text-sm cursor-pointer"> {category.name} </Label> </div> ))} </RadioGroup>
             </div>
           </div>
         </CardContent>

@@ -64,7 +64,7 @@ function Register() {
           } else {
               toast({
                   title: "Error",
-                  description: data.error || "Registration failed. Please try again.",
+                  description: data.error || "Registration failed",
                   variant: "destructive",
                   className: "bg-white border-red-500 text-red-500", // Add solid background
               });

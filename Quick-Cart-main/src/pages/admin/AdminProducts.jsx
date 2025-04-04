@@ -10,7 +10,12 @@ const getAllProducts = async () => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    return Array.isArray(data) ? data : data.products || [];
+    const products = Array.isArray(data) ? data : data.products || [];
+    return products.map(product => ({
+      ...product,
+      imageUrl: product.imageUrl ? `http://localhost:5000${product.imageUrl}` : '',
+      checked: product.checked || false
+    }));
   } catch (error) {
     console.error('Error fetching products:', error);
     throw error;
@@ -32,9 +37,10 @@ const AdminProducts = () => {
       } catch (err) {
         const errorMessage = err.message || 'Failed to fetch products';
         toast({
-          variant: "destructive",
           title: "Error",
           description: errorMessage,
+          variant: "destructive",
+          className: "bg-white border-red-500 text-red-500"
         });
         setError(errorMessage);
         setLoading(false);
@@ -70,11 +76,11 @@ const AdminProducts = () => {
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {products.map((product) => (
-            <div key={product.id} className="relative group">
+            <div key={product._id} className="relative group">
               <ProductCard product={product} />
               <div className="absolute bottom-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Link
-                  to={`/admin/products/${product.id}`}
+                  to={`/admin/products/${product._id}`}
                   className="inline-flex items-center justify-center px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
                 >
                   Edit

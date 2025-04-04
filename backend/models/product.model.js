@@ -31,6 +31,7 @@ const productSchema = new mongoose.Schema({
   discountPercentage: { type: Number, default: 0, min: 0, max: 100 },
   imageUrl: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now, required: true },
+  isNewArrival: { type: Boolean, default: false },
 });
 
 // Middleware to generate auto-incremented custom product ID

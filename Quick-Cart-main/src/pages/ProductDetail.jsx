@@ -1,24 +1,75 @@
-import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import ProductGrid from "@/components/product/ProductGrid";
-import { getProductById, getRelatedProducts } from "@/data/products";
 import { useCart } from "@/context/CartContext";
+import { useAdmin } from "@/context/AdminContext";
+import { useToast } from "@/hooks/use-toast";
 
 const ProductDetail = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { isAuthenticated: isAdmin } = useAdmin();
+  const { toast } = useToast();
 
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState();
-  const [selectedSize, setSelectedSize] = useState();
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
   const [activeImage, setActiveImage] = useState(0);
+  const [product, setProduct] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const product = productId ? getProductById(productId) : undefined;
-  const relatedProducts = productId ? getRelatedProducts(productId) : [];
+  // Log the productId to check if it's correctly retrieved
+  useEffect(() => {
+    console.log("Product ID:", productId);
+  }, [productId]);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!productId) return;
+      setIsLoading(true);
+      try {
+        const response = await fetch(`http://localhost:5000/api/products/${productId}`);
+        if (!response.ok) throw new Error("Product not found");
+        const data = await response.json();
+        setProduct(data);
+
+        // Fetch related products
+        const relatedResponse = await fetch(`http://localhost:5000/api/products?category=${data.category}&limit=4`);
+        if (relatedResponse.ok) {
+          const relatedData = await relatedResponse.json();
+          setRelatedProducts(relatedData.products.filter(p => p._id !== productId));
+        }
+      } catch (error) {
+        console.error("Error fetching product:", error);
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+          className: "bg-white border-red-500 text-red-500"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [productId, toast]);
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto py-16 text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading product details...</p>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (!product) {
     return (
@@ -34,156 +85,101 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     if (!selectedSize) {
-      alert("Please select a size");
+      toast({ title: "Error", description: "Please select a size", variant: "destructive" });
       return;
     }
 
-    if (product.colors && product.colors.length > 0 && !selectedColor) {
-      alert("Please select a color");
+    if (product.colors?.length > 0 && !selectedColor) {
+      toast({ title: "Error", description: "Please select a color", variant: "destructive" });
       return;
     }
 
     addToCart(product, quantity, selectedSize, selectedColor);
+    toast({ title: "Added to Cart", description: `${product.name} added successfully!`, className: "bg-white border-green-500 text-green-500" });
   };
 
-  const handleQuantityChange = (value) => {
-    if (value >= 1) {
-      setQuantity(value);
+  const handleDeleteProduct = async () => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/products/${productId}`, { method: "DELETE" });
+        if (!response.ok) throw new Error("Failed to delete product");
+
+        toast({ title: "Success", description: "Product deleted successfully", className: "bg-white border-green-500 text-green-500" });
+        navigate("/admin/products");
+      } catch (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
+      }
     }
   };
-
-  const thumbnails = [`http://localhost:5000${product.imageUrl}`, `http://localhost:5000${product.imageUrl}`, `http://localhost:5000${product.imageUrl}`];
 
   return (
     <MainLayout>
       <div className="container mx-auto py-8 px-4">
         <div className="flex items-center gap-2 text-sm mb-8">
-          <a href="/" className="text-gray-500 hover:text-black">Home</a>
+          <Link to="/" className="text-gray-500 hover:text-black">Home</Link>
           <span className="text-gray-500">/</span>
-          <a href="/shop" className="text-gray-500 hover:text-black">Shop</a>
+          <Link to="/shop" className="text-gray-500 hover:text-black">Shop</Link>
           <span className="text-gray-500">/</span>
           <span className="font-medium">{product.name}</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          {/* Product Images */}
+          {/* Product Image */}
           <div>
-            <div className="mb-4 bg-gray-100 rounded-md">
-              <img
-                src={`http://localhost:5000${product.imageUrl}`}
-                alt={product.name}
-                className="w-full h-auto rounded-md object-cover aspect-square"
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              {thumbnails.map((thumb, index) => (
-                <button
-                  key={index}
-                  className={`border-2 rounded-md overflow-hidden ${
-                    activeImage === index ? "border-black" : "border-transparent"
-                  }`}
-                  onClick={() => setActiveImage(index)}
-                >
-                  <img
-                    src={thumb}
-                    alt={`${product.name} thumbnail ${index + 1}`}
-                    className="w-full h-auto aspect-square object-cover"
-                  />
-                </button>
-              ))}
-            </div>
+            <img
+              src={`http://localhost:5000${product.imageUrl}`}
+              alt={product.name}
+              className="w-full h-auto rounded-md object-cover"
+            />
           </div>
 
           {/* Product Details */}
           <div>
             <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-            <p className="text-2xl font-medium mb-4">₹{product.price}</p>
+            <p className="text-2xl font-medium">₹{product.price}</p>
 
-            {product.description && (
-              <p className="text-gray-600 mb-6">{product.description}</p>
-            )}
-
-            {/* Color Selection */}
-            {product.colors && product.colors.length > 0 && (
+            {product.colors?.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-sm font-medium mb-3">Select Colors</h3>
                 <div className="flex gap-2">
                   {product.colors.map((color) => (
                     <button
                       key={color}
-                      className={`w-8 h-8 rounded-full ${
-                        selectedColor === color ? "ring-2 ring-offset-2 ring-black" : ""
-                      }`}
+                      className={`w-8 h-8 rounded-full border-2 ${selectedColor === color ? "border-black" : "border-transparent"}`}
                       style={{ backgroundColor: color }}
                       onClick={() => setSelectedColor(color)}
-                      aria-label={`Select ${color} color`}
                     />
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Size Selection */}
-            {product.sizes && product.sizes.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-medium mb-3">Choose Size</h3>
-                <div className="flex flex-wrap gap-2">
-                  {product.sizes.map((size) => (
-                    <button
-                      key={size}
-                      className={`px-4 py-2 border rounded-md ${
-                        selectedSize === size
-                          ? "bg-black text-white border-black"
-                          : "bg-white text-gray-800 border-gray-300 hover:border-gray-500"
-                      }`}
-                      onClick={() => setSelectedSize(size)}
-                    >
-                      {size.charAt(0).toUpperCase() + size.slice(1)}
-                    </button>
-                  ))}
-                </div>
+            <div className="flex items-center gap-4">
+              <button className="px-3 py-2 border" onClick={() => setQuantity(quantity - 1)} disabled={quantity <= 1}>
+                <Minus />
+              </button>
+              <input className="w-12 text-center" type="number" value={quantity} readOnly />
+              <button className="px-3 py-2 border" onClick={() => setQuantity(quantity + 1)}>
+                <Plus />
+              </button>
+            </div>
+
+            <Button className="mt-6" onClick={handleAddToCart}>
+              Add to Cart
+            </Button>
+
+            {isAdmin && (
+              <div className="flex gap-4 mt-6">
+                <Link to={`/admin/products/${productId}`} className="text-blue-600 hover:text-blue-800">
+                  <Pencil /> Edit
+                </Link>
+                <button onClick={handleDeleteProduct} className="text-red-600 hover:text-red-800">
+                  <Trash2 /> Delete
+                </button>
               </div>
             )}
-
-            {/* Quantity Selector */}
-            <div className="flex items-center mb-6 gap-4">
-              <div className="flex items-center border border-gray-300 rounded-md">
-                <button
-                  className="px-3 py-2 border-r border-gray-300"
-                  onClick={() => handleQuantityChange(quantity - 1)}
-                  disabled={quantity <= 1}
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
-                <input
-                  type="number"
-                  value={quantity}
-                  onChange={(e) => handleQuantityChange(parseInt(e.target.value))}
-                  className="w-12 px-3 py-2 text-center appearance-none"
-                />
-                <button
-                  className="px-3 py-2 border-l border-gray-300"
-                  onClick={() => handleQuantityChange(quantity + 1)}
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
-
-              <Button
-                className="flex-1 bg-black hover:bg-gray-800 text-white py-6"
-                onClick={handleAddToCart}
-              >
-                Add to Cart
-              </Button>
-            </div>
           </div>
         </div>
-
-        {/* Related Products */}
-        <section className="py-16">
-          <h2 className="text-2xl font-bold mb-6">You might also like</h2>
-          <ProductGrid products={relatedProducts} />
-        </section>
       </div>
     </MainLayout>
   );

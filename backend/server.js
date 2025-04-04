@@ -10,6 +10,7 @@ import QuickcartModel from "./models/register.model.js";
 import AdminModel from "./models/admin.model.js";
 import ProductModel from "./models/product.model.js";
 import CategoryModel from "./models/category.model.js";
+import { ContactModel } from "./models/contact.model.js";
 
 // Get directory in ES module
 const __filename = fileURLToPath(import.meta.url);
@@ -41,7 +42,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Multer setup
 const storage = multer.diskStorage({
@@ -55,9 +56,12 @@ const upload = multer({
     storage,
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-        if (!allowedTypes.includes(file.mimetype)) {
-            const error = new Error('Only .jpeg, .png and .gif format allowed!');
+        const allowedTypes = ['image/jpeg', 'image/jpg'];
+        const allowedExtensions = ['.jpg', '.jpeg'];
+        const ext = path.extname(file.originalname).toLowerCase();
+        
+        if (!allowedTypes.includes(file.mimetype) || !allowedExtensions.includes(ext)) {
+            const error = new Error('Only JPG/JPEG images are allowed!');
             error.code = 'INVALID_FILE_TYPE';
             return cb(error, false);
         }
@@ -84,23 +88,14 @@ app.use((error, req, res, next) => {
 // Connect to Database
 connectDB();
 
-// --- PRODUCT ENDPOINTS ---
-// Get all products with optional filtering, sorting and pagination
+/// --- PRODUCT ENDPOINTS ---
+// Get all products with optional filtering, sorting, and pagination
 app.get("/api/products", async (req, res) => {
     try {
-        const { 
-            category, 
-            brand, 
-            minPrice, 
-            maxPrice, 
-            sortBy = 'createdAt', 
-            sortOrder = 'desc',
-            page = 1,
-            limit = 10
-        } = req.query;
-
-        // Build filter object
+        const { category, brand, minPrice, maxPrice, sortBy = 'createdAt', sortOrder = 'desc', page = 1, limit = 10, newArrivals } = req.query;
+        
         const filter = {};
+if (newArrivals) filter.isNewArrival = true;
         if (category) filter.category = category;
         if (brand) filter.brand = brand;
         if (minPrice || maxPrice) {
@@ -108,74 +103,103 @@ app.get("/api/products", async (req, res) => {
             if (minPrice) filter.price.$gte = Number(minPrice);
             if (maxPrice) filter.price.$lte = Number(maxPrice);
         }
-
-        // Calculate skip value for pagination
+        
         const skip = (Number(page) - 1) * Number(limit);
-
-        // Build sort object
-        const sort = {};
-        sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
-
-        // Get total count for pagination
+        const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
         const total = await ProductModel.countDocuments(filter);
-
-        // Fetch products
-        const products = await ProductModel.find(filter)
-            .sort(sort)
-            .skip(skip)
-            .limit(Number(limit));
-
-        res.json({
-            products,
-            pagination: {
-                total,
-                page: Number(page),
-                pages: Math.ceil(total / Number(limit))
-            }
-        });
+        const products = await ProductModel.find(filter).sort(sort).skip(skip).limit(Number(limit));
+        
+        res.json({ products, pagination: { total, page: Number(page), pages: Math.ceil(total / Number(limit)) } });
     } catch (error) {
-        console.error("Error fetching products:", error);
         res.status(500).json({ error: "Failed to fetch products", details: error.message });
     }
 });
 
+// Create a new product
 app.post("/api/products", upload.single("image"), async (req, res) => {
     try {
-        const { name, price, description, category, brand, sku, stockQuantity, originalPrice, discountPercentage } = req.body;
+        if (!req.file) return res.status(400).json({ error: "Product image is required" });
         
-        // Validate required fields
-        if (!name || !price || !description || !category || !brand || !sku) {
-            return res.status(400).json({ error: "Required fields are missing" });
-        }
-
-        // Validate image upload
-        if (!req.file) {
-            return res.status(400).json({ error: "Product image is required" });
-        }
-
-        const imageUrl = `/uploads/${req.file.filename}`;
-        
+        const productData = JSON.parse(req.body.product);
         const product = new ProductModel({
-            name,
-            price: Number(price),
-            description,
-            category,
-            brand,
-            sku,
-            stockQuantity: Number(stockQuantity) || 0,
-            originalPrice: Number(originalPrice) || price,
-            discountPercentage: Number(discountPercentage) || 0,
-            imageUrl
+            name: productData.name,
+            price: Number(productData.price),
+            description: productData.description,
+            category: productData.category,
+            brand: productData.brand,
+            sku: productData.sku,
+            stockQuantity: Number(productData.stockQuantity) || 0,
+            originalPrice: Number(productData.originalPrice) || productData.price,
+            discountPercentage: Number(productData.discountPercentage) || 0,
+            imageUrl: `/uploads/${req.file.filename}`
         });
-
+        
         await product.save();
-        res.status(201).json({ 
-            message: "Product created successfully",
-            product
-        });
+        res.status(201).json({ message: "Product created successfully", product });
     } catch (error) {
-        console.error("Error creating product:", error);
         res.status(500).json({ error: "Failed to create product", details: error.message });
+    }
+});
+
+// Get product by ID
+app.get("/api/products/:id", async (req, res) => {
+    try {
+        const product = await ProductModel.findById(req.params.id);
+        if (!product) return res.status(404).json({ error: "Product not found" });
+        res.json(product);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch product", details: error.message });
+    }
+});
+
+// Update product
+app.put("/api/products/:id", upload.single("image"), async (req, res) => {
+    try {
+        const product = await ProductModel.findById(req.params.id);
+        if (!product) return res.status(404).json({ error: "Product not found" });
+        
+        const updates = req.body;
+        if (req.file) {
+            updates.imageUrl = `/uploads/${req.file.filename}`;
+            if (product.imageUrl) fs.unlinkSync(path.join(__dirname, product.imageUrl));
+        }
+        
+        Object.assign(product, updates);
+        await product.save();
+        res.json({ message: "Product updated successfully", product });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to update product", details: error.message });
+    }
+});
+
+// Delete product
+app.delete("/api/products/:id", async (req, res) => {
+    try {
+        const product = await ProductModel.findById(req.params.id);
+        if (!product) return res.status(404).json({ error: "Product not found" });
+        
+        if (product.imageUrl) fs.unlinkSync(path.join(__dirname, product.imageUrl));
+        await product.deleteOne();
+        
+        res.json({ message: "Product deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to delete product", details: error.message });
+    }
+});
+
+
+// --- CONTACT US FORM SUBMISSION ---
+app.post("/api/contact", async (req, res) => {
+    try {
+        const { name, email, subject, message } = req.body;
+        if (!name || !email || !subject || !message) {
+            return res.status(400).json({ error: "All fields are required" });
+        }
+        const contact = new ContactModel({ name, email, subject, message });
+        await contact.save();
+        res.status(201).json({ message: "Your message has been received" });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to submit message", details: error.message });
     }
 });
 
@@ -302,6 +326,20 @@ app.put("/api/categories/:id", async (req, res) => {
     } catch (error) {
         console.error("Error updating category:", error);
         res.status(500).json({ error: "Failed to update category", details: error.message });
+    }
+});
+
+app.post("/api/contact", async (req, res) => {
+    try {
+        const { name, email, subject, message } = req.body;
+        if (!name || !email || !subject || !message) {
+            return res.status(400).json({ error: "All fields are required" });
+        }
+        const contact = new ContactModel({ name, email, subject, message });
+        await contact.save();
+        res.status(201).json({ message: "Contact form submitted successfully" });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to submit contact form", details: error.message });
     }
 });
 

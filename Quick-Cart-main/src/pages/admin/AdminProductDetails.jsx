@@ -21,7 +21,12 @@ const getProduct = async (id) => {
     const errorData = await response.json();
     throw new Error(errorData.error || 'Failed to fetch product');
   }
-  return await response.json();
+  const product = await response.json();
+  if (product.imageUrl) {
+    product.imageUrl = `http://localhost:5000${product.imageUrl}`;
+  }
+  product.checked = product.checked || false;
+  return product;
 };
 
 const createProduct = async (product, imageFile) => {
@@ -110,11 +115,13 @@ const AdminProductDetails = () => {
           const productData = await getProduct(productId);
           if (productData) {
             setProduct(productData);
+            console.log("Fetched product data:", productData);
           } else {
             toast({
               title: "Error",
               description: "Product not found",
               variant: "destructive",
+              className: "bg-white border-red-500 text-red-500"
             });
             navigate("/admin/products");
           }
@@ -125,6 +132,7 @@ const AdminProductDetails = () => {
           title: "Error",
           description: error.message || "Failed to load product data. Please try again.",
           variant: "destructive",
+          className: "bg-white border-red-500 text-red-500"
         });
       } finally {
         setIsLoading(false);
@@ -138,17 +146,23 @@ const AdminProductDetails = () => {
     try {
       if (isNewProduct) {
         const newProduct = await createProduct(data, imageFile);
-        toast({
-          title: "Success",
-          description: "Product created successfully",
-        });
-        navigate(`/admin/products/${newProduct.id}`);
+        if (newProduct && newProduct._id) {
+          toast({
+            title: "Success",
+            description: "Product created successfully",
+            className: "bg-white border-green-500 text-green-500"
+          });
+          navigate(`/admin/products/${newProduct._id}`);
+        } else {
+          throw new Error("Failed to create product - invalid response from server");
+        }
       } else {
         const updatedProduct = await updateProduct(productId, data, imageFile);
         setProduct(updatedProduct);
         toast({
           title: "Success",
           description: "Product updated successfully",
+          className: "bg-white border-green-500 text-green-500"
         });
       }
     } catch (error) {
@@ -169,6 +183,7 @@ const AdminProductDetails = () => {
       toast({
         title: "Success",
         description: "Product deleted successfully",
+        className: "bg-white border-green-500 text-green-500"
       });
       navigate("/admin/products");
     } catch (error) {

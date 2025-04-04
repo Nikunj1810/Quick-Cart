@@ -20,7 +20,7 @@ const Footer = () => {
     <footer className="pt-12 pb-6 bg-gray-100">
       <div className="container px-4 mx-auto">
         {/* Newsletter Section */}
-        <div className="p-8 mb-12 text-white bg-black rounded-lg">
+        <div className="p-8 mb-12 text-white bg-black rounded-lg" style={{ borderRadius: '30px' }}>
           <div className="grid items-center grid-cols-1 gap-8 md:grid-cols-2">
             <div>
               <h3 className="mb-2 text-2xl font-bold">STAY UPTO DATE ABOUT OUR LATEST OFFERS</h3>
@@ -31,13 +31,13 @@ const Footer = () => {
                   <Input
                     type="email"
                     placeholder="Enter your email address"
-                    className="py-6 text-black bg-white"
+                    className="py-6 text-black bg-white rounded-lg"
                     required
                   />
                 </div>
                 <Button 
                   type="submit" 
-                  className="w-full py-6 text-black bg-white hover:bg-gray-200"
+                  className="w-full py-6 text-black bg-white hover:bg-gray-200 rounded-lg"
                 >
                   Subscribe to Newsletter
                 </Button>

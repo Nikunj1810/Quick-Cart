@@ -77,7 +77,7 @@ const AdminProducts = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {products.map((product) => (
             <div key={product._id} className="relative group">
-              <ProductCard product={product} />
+              <ProductCard key={product._id} product={product} />
               <div className="absolute bottom-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Link
                   to={`/admin/products/${product._id}`}

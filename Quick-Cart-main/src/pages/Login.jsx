@@ -65,10 +65,10 @@ const Login = () => {
           className: "bg-white border-green-500 text-black",
         });
 
-        // Delay for buffer screen visibility
+        // Delay for buffer screen visibility, but don't reload the page
         setTimeout(() => {
           navigate("/");
-          window.location.reload();
+          // Removed window.location.reload() to prevent white screen issues
         }, 2000);
       } else {
         setErrorMessage(data.error || "Invalid email or password");

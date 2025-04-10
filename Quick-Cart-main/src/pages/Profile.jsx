@@ -36,10 +36,10 @@ const Profile = () => {
         className: "bg-white border-green-500 text-black",
       });
 
-      // Delay navigation to show toast
+      // Delay navigation to show toast, but don't reload the page
       setTimeout(() => {
         navigate("/");
-        window.location.reload();
+        // Removed window.location.reload() to prevent white screen issues
       }, 2000);
     } catch (error) {
       console.error("Logout error:", error);

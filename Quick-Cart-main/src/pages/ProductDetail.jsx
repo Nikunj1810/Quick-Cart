@@ -12,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import ProductGrid from "@/components/product/ProductGrid";
 import { useCart } from "@/context/CartContext";
 import { useAdmin } from "@/context/AdminContext";
 import { useToast } from "@/hooks/use-toast";
@@ -50,6 +49,7 @@ const ProductDetail = () => {
           title: "Error",
           description: error.message,
           variant: "destructive",
+          className: "bg-white border-red-500 text-red-500"
         });
       } finally {
         setIsLoading(false);
@@ -59,29 +59,7 @@ const ProductDetail = () => {
     fetchProduct();
   }, [productId, toast]);
 
-  if (isLoading) {
-    return (
-      <MainLayout>
-        <div className="container mx-auto py-16 text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Loading product details...</p>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  if (!product) {
-    return (
-      <MainLayout>
-        <div className="container mx-auto py-16 text-center">
-          <h1 className="text-3xl font-bold mb-4">Product Not Found</h1>
-          <Button onClick={() => navigate("/shop")}>Continue Shopping</Button>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!isLoggedIn()) {
       setShowLoginDialog(true);
       return;
@@ -92,14 +70,27 @@ const ProductDetail = () => {
         title: "Error",
         description: "Please select a size",
         variant: "destructive",
+        className: "bg-white border-black text-black rounded-lg shadow-lg"
       });
       return;
     }
-    addToCart(product, quantity, selectedSize, selectedColor);
-    toast({
-      title: "Added to Cart",
-      description: `${product.name} added successfully!`,
-    });
+    
+    // Determine size type based on product category or default to standard
+    const sizeType = product.category?.includes('pants') ? 'waist' : 'standard';
+
+    try {
+      setIsLoading(true);
+      await addToCart(product, quantity, selectedSize, sizeType);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add item to cart",
+        variant: "destructive",
+        className: "bg-white border-red-500 text-red-500"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDeleteProduct = async () => {
@@ -125,6 +116,32 @@ const ProductDetail = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto py-16 text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading product details...</p>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!product) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto py-16 text-center">
+          <h1 className="text-3xl font-bold mb-4">Product Not Found</h1>
+          <Button onClick={() => navigate("/shop")}>Continue Shopping</Button>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  const discountPercent = product.originalPrice && product.originalPrice > product.price
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : null;
+
   return (
     <MainLayout>
       <div className="container mx-auto py-8 px-4">
@@ -143,13 +160,26 @@ const ProductDetail = () => {
           {/* Product Details */}
           <div className="space-y-8">
             <div>
+              {/* Optional: New Arrival Tag */}
+              {/* {product.isNewArrival && (
+                <span className="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold mb-2">
+                  🆕 New Arrival
+                </span>
+              )} */}
+
               <h1 className="text-4xl font-bold mb-4">{product.name}</h1>
-              <div className="flex items-baseline gap-4">
-                <p className="text-3xl font-semibold">₹{product.price}</p>
-                {product.originalPrice && (
-                  <p className="text-xl text-gray-500 line-through">
-                    ₹{product.originalPrice}
-                  </p>
+
+              <div className="flex items-center gap-4">
+                <p className="text-3xl font-bold text-black">₹{product.price}</p>
+                {product.originalPrice > product.price && (
+                  <>
+                    <p className="text-xl text-gray-400 line-through">
+                      ₹{product.originalPrice}
+                    </p>
+                    <span className="px-3 py-1 bg-red-100 text-red-600 text-sm font-semibold rounded-full animate-pulse">
+                      {discountPercent}% OFF
+                    </span>
+                  </>
                 )}
               </div>
             </div>
@@ -160,27 +190,21 @@ const ProductDetail = () => {
                 <div className="flex flex-wrap gap-3">
                   {product.sizes.map((sizeObj) => (
                     <button
-                      key={sizeObj._id} // ✅ Use sizeObj._id as key to prevent warnings
+                      key={sizeObj._id}
                       className={`px-6 py-3 border-2 rounded-lg font-medium transition-all
-            ${
-              selectedSize === sizeObj.size
-                ? "border-black bg-black text-white"
-                : "border-gray-200 hover:border-gray-300"
-            }
-            ${sizeObj.quantity === 0 ? "opacity-50 cursor-not-allowed" : ""}
-          `}
+                        ${selectedSize === sizeObj.size ? "border-black bg-black text-white" : "border-gray-200 hover:border-gray-300"}
+                        ${sizeObj.quantity === 0 ? "opacity-50 cursor-not-allowed" : ""}
+                      `}
                       onClick={() => setSelectedSize(sizeObj.size)}
-                      disabled={sizeObj.quantity === 0} // Disable if out of stock
+                      disabled={sizeObj.quantity === 0}
                     >
-                      {sizeObj.size}{" "}
-                      {/* ✅ Now correctly extracting `size` property */}
+                      {sizeObj.size}
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Select Color (Only if colors exist) */}
             {product.colors?.length > 0 && (
               <div>
                 <h3 className="text-base font-semibold mb-4">Select Color</h3>
@@ -233,17 +257,19 @@ const ProductDetail = () => {
 
             {/* Login Dialog */}
             <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-              <DialogContent className="sm:max-w-[425px] bg-white/80 backdrop-blur-lg shadow-xl border-0 rounded-2xl">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold text-center">Login Required</DialogTitle>
-                  <DialogDescription className="text-center text-base">
+              <DialogContent className="sm:max-w-[425px] bg-white shadow-2xl border-2 border-black/10 rounded-[32px] transform transition-all duration-300 ease-in-out hover:scale-[1.02] hover:border-black/20">
+                <DialogHeader className="space-y-3">
+                  <DialogTitle className="text-3xl font-bold text-center bg-gradient-to-r from-black to-gray-700 bg-clip-text text-transparent">
+                    Login Required
+                  </DialogTitle>
+                  <DialogDescription className="text-center text-base text-gray-600 leading-relaxed">
                     Please login or create an account to add items to your cart and start shopping!
                   </DialogDescription>
                 </DialogHeader>
-                <div className="flex flex-col gap-4 py-4">
+                <div className="flex flex-col gap-5 py-6">
                   <Button
                     variant="outline"
-                    className="w-full py-6 text-lg font-medium"
+                    className="w-full py-6 text-lg font-medium rounded-2xl border-2 hover:bg-black hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
                     onClick={() => {
                       setShowLoginDialog(false);
                       navigate("/login");
@@ -251,16 +277,16 @@ const ProductDetail = () => {
                   >
                     Login to Your Account
                   </Button>
-                  <div className="relative">
+                  <div className="relative my-2">
                     <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
+                      <span className="w-full border-t-2 border-gray-100" />
                     </div>
                     <div className="relative flex justify-center text-sm uppercase">
-                      <span className="bg-white px-2 text-muted-foreground">Or</span>
+                      <span className="bg-white px-6 text-gray-400 font-semibold tracking-wider">Or</span>
                     </div>
                   </div>
                   <Button
-                    className="w-full py-6 text-lg font-medium bg-black hover:bg-gray-800 text-white"
+                    className="w-full py-6 text-lg font-medium bg-black text-white rounded-2xl transform transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl hover:bg-gray-900"
                     onClick={() => {
                       setShowLoginDialog(false);
                       navigate("/signup");

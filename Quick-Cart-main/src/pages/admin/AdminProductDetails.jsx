@@ -121,7 +121,7 @@ const AdminProductDetails = () => {
               title: "Error",
               description: "Product not found",
               variant: "destructive",
-              className: "bg-white border-red-500 text-red-500"
+              className: "bg-transparent border-black text-black rounded-lg shadow-lg"
             });
             navigate("/admin/products");
           }
@@ -132,7 +132,7 @@ const AdminProductDetails = () => {
           title: "Error",
           description: error.message || "Failed to load product data. Please try again.",
           variant: "destructive",
-          className: "bg-white border-red-500 text-red-500"
+          className: "bg-white border-red-500 text-red-500 rounded-lg shadow-lg"
         });
       } finally {
         setIsLoading(false);
@@ -150,7 +150,7 @@ const AdminProductDetails = () => {
           toast({
             title: "Success",
             description: "Product created successfully",
-            className: "bg-white border-green-500 text-green-500"
+            className: "bg-white border-green-500 text-green-500 rounded-lg shadow-lg"
           });
           navigate(`/admin/products/${newProduct._id}`);
         } else {
@@ -162,7 +162,7 @@ const AdminProductDetails = () => {
         toast({
           title: "Success",
           description: "Product updated successfully",
-          className: "bg-white border-green-500 text-green-500"
+          className: "bg-white border-green-500 text-green-500 rounded-lg shadow-lg"
         });
       }
     } catch (error) {
@@ -183,7 +183,7 @@ const AdminProductDetails = () => {
       toast({
         title: "Success",
         description: "Product deleted successfully",
-        className: "bg-white border-green-500 text-green-500"
+        className: "bg-white border-green-500 text-green-500 rounded-lg shadow-lg"
       });
       navigate("/admin/products");
     } catch (error) {

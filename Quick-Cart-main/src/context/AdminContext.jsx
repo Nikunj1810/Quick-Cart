@@ -45,11 +45,6 @@ export const AdminProvider = ({ children }) => {
           localStorage.setItem("quickcart-admin", JSON.stringify(mockAdmin));
         }
         
-        toast({
-          title: "Login successful",
-          description: "Welcome to QuickCart Admin Dashboard!",
-        });
-        
         setIsLoading(false);
         return true;
       }

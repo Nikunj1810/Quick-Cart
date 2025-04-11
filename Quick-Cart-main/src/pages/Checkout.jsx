@@ -3,12 +3,16 @@ import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { useCart } from "@/context/CartContext";
 import { toast } from "@/components/ui/use-toast";
+import { orderApi } from "@/services/orderApi";
+import { ShoppingBag, CreditCard, Truck } from "lucide-react";
+import { formatIndianRupee } from "@/utils/currency";
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { cart, cartTotal, clearCart } = useCart();
   const [orderTotal, setOrderTotal] = useState(0);
   const [deliveryFee, setDeliveryFee] = useState(150);
+  const [cartWithProducts, setCartWithProducts] = useState([]);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -20,11 +24,65 @@ const Checkout = () => {
     paymentMethod: "cod"
   });
   const [loading, setLoading] = useState(false);
+  const [localCartTotal, setLocalCartTotal] = useState(0);
 
-  // Calculate order total (subtotal + delivery fee)
+  // Fetch complete product details for each cart item
   useEffect(() => {
-    setOrderTotal(cartTotal + deliveryFee);
-  }, [cartTotal, deliveryFee]);
+    const fetchProductDetails = async () => {
+      if (cart.length === 0) {
+        setCartWithProducts([]);
+        setLocalCartTotal(0);
+        return;
+      }
+      
+      setLoading(true);
+      try {
+        const cartItemsWithProducts = await Promise.all(
+          cart.map(async (item) => {
+            const productId = item.productId || item.product?._id;
+            if (!productId) return item;
+            
+            try {
+              const response = await fetch(`http://localhost:5000/api/products/${productId}`);
+              if (!response.ok) throw new Error(`Failed to fetch product ${productId}`);
+              
+              const productData = await response.json();
+              // Add base URL to image path if it exists and doesn't already have it
+              if (productData.imageUrl) {
+                productData.imageUrl = productData.imageUrl.startsWith('http') 
+                  ? productData.imageUrl 
+                  : `http://localhost:5000${productData.imageUrl}`;
+              }
+              return { ...item, product: productData };
+            } catch (err) {
+              console.error(`Error fetching product ${productId}:`, err);
+              return item;
+            }
+          })
+        );
+        
+        setCartWithProducts(cartItemsWithProducts);
+        
+        // Calculate local cart total based on fetched product data
+        const total = cartItemsWithProducts.reduce((sum, item) => {
+          return sum + ((item.product?.price || 0) * item.quantity);
+        }, 0);
+        setLocalCartTotal(total);
+        setOrderTotal(total + deliveryFee);
+      } catch (err) {
+        console.error('Error fetching product details:', err);
+        toast({
+          title: "Error",
+          description: "Failed to load product details",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProductDetails();
+  }, [cart, deliveryFee]);
 
   // Redirect if cart is empty
   useEffect(() => {
@@ -51,27 +109,53 @@ const Checkout = () => {
     setLoading(true);
 
     try {
-      // Here you would normally send the order to your backend
-      // Including the orderTotal in the request
+      // Validate form data
+      const requiredFields = ['fullName', 'email', 'phone', 'address', 'city', 'state', 'zipCode'];
+      const missingFields = requiredFields.filter(field => !formData[field]);
+      
+      if (missingFields.length > 0) {
+        throw new Error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      }
+
+      // Format cart items to ensure they have the required fields
+      const formattedItems = cart.map(item => ({
+        productId: item.productId || item.product?._id,
+        size: item.size || 'M',
+        sizeType: item.sizeType || 'standard',
+        quantity: item.quantity
+      }));
+
+      // Prepare order data to send to the backend
       const orderData = {
-        ...formData,
-        items: cart,
-        subtotal: cartTotal,
+        items: formattedItems,
+        shippingInfo: {
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode
+        },
+        paymentMethod: formData.paymentMethod,
+        subtotal: localCartTotal,
         deliveryFee,
-        orderTotal, // Include the total in the order data
-        orderDate: new Date().toISOString(),
+        orderTotal
       };
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Use the orderApi service to create the order
+      const result = await orderApi.createOrder(orderData);
       
       // Clear cart after successful order
       await clearCart();
       
+      // Set flag in sessionStorage to indicate order completion
+      sessionStorage.setItem("orderCompleted", "true");
+      
       // Show success message
       toast({
         title: "Order Placed Successfully",
-        description: `Your order has been placed. Total: ₹${orderTotal.toFixed(2)}`,
+        description: `Your order has been placed. Total: ${formatIndianRupee(orderTotal)}`,
       });
       
       // Redirect to confirmation page
@@ -80,7 +164,7 @@ const Checkout = () => {
       console.error("Error placing order:", error);
       toast({
         title: "Error",
-        description: "Failed to place your order. Please try again.",
+        description: error.message || "Failed to place your order. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -99,14 +183,20 @@ const Checkout = () => {
           <span className="font-medium">Checkout</span>
         </div>
 
-        <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+        <h1 className="text-3xl font-bold mb-8 flex items-center">
+          <ShoppingBag className="mr-3 h-8 w-8" />
+          Complete Your Order
+        </h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Checkout Form */}
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="border border-gray-200 rounded-lg p-6">
-                <h2 className="text-xl font-bold mb-4">Shipping Information</h2>
+              <div className="border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+                <h2 className="text-xl font-bold mb-4 flex items-center">
+                  <Truck className="mr-2 h-5 w-5 text-blue-600" />
+                  Shipping Information
+                </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -202,8 +292,11 @@ const Checkout = () => {
                 </div>
               </div>
               
-              <div className="border border-gray-200 rounded-lg p-6">
-                <h2 className="text-xl font-bold mb-4">Payment Method</h2>
+              <div className="border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
+                <h2 className="text-xl font-bold mb-4 flex items-center">
+                  <CreditCard className="mr-2 h-5 w-5 text-green-600" />
+                  Payment Method
+                </h2>
                 
                 <div className="space-y-3">
                   <div className="flex items-center">
@@ -250,7 +343,7 @@ const Checkout = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full bg-black hover:bg-gray-800 text-white py-3 rounded-md font-medium ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                className={`w-full bg-black hover:bg-gray-800 text-white py-3 rounded-md font-medium transition-all duration-300 transform hover:scale-[1.02] ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
                 {loading ? 'Processing...' : 'Place Order'}
               </button>
@@ -259,34 +352,30 @@ const Checkout = () => {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="border border-gray-200 rounded-lg p-6 sticky top-8">
-              <h2 className="text-xl font-bold mb-6">Order Summary</h2>
+            <div className="border border-gray-200 rounded-lg p-6 sticky top-8 shadow-md bg-gray-50">
+              <h2 className="text-xl font-bold mb-6 text-center pb-2 border-b border-gray-200">Order Summary</h2>
               
               <div className="space-y-4 mb-6">
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center py-2">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">₹{cartTotal.toFixed(2)}</span>
+                  <span className="font-medium">{formatIndianRupee(localCartTotal)}</span>
                 </div>
-
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center py-2">
                   <span className="text-gray-600">Delivery Fee</span>
-                  <span className="font-medium">₹{deliveryFee.toFixed(2)}</span>
+                  <span className="font-medium">{formatIndianRupee(deliveryFee)}</span>
                 </div>
-
-                <div className="border-t border-gray-200 pt-4">
-                  <div className="flex justify-between font-bold">
-                    <span>Total</span>
-                    <span>₹{orderTotal.toFixed(2)}</span>
-                  </div>
+                <div className="flex justify-between items-center py-2 border-t border-gray-200 mt-2 pt-2">
+                  <span className="font-bold">Total</span>
+                  <span className="font-bold">{formatIndianRupee(orderTotal)}</span>
                 </div>
               </div>
               
               <div className="space-y-4">
-                <h3 className="font-medium">Order Details</h3>
-                <div className="max-h-60 overflow-y-auto space-y-3 pr-2">
-                  {cart.map((item) => (
-                    <div key={`${item.productId || item.product?._id}-${item.size}`} className="flex gap-3">
-                      <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
+                <h3 className="font-medium text-center bg-gray-200 py-2 rounded-md">Order Details</h3>
+                <div className="max-h-60 overflow-y-auto space-y-4 pr-2">
+                  {cartWithProducts.map((item) => (
+                    <div key={`${item.productId || item.product?._id}-${item.size}`} className="flex gap-3 bg-white p-3 rounded-lg shadow-sm">
+                      <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden flex-shrink-0 border border-gray-200">
                         {item.product?.imageUrl ? (
                           <img
                             src={item.product.imageUrl}
@@ -299,15 +388,20 @@ const Checkout = () => {
                           </div>
                         )}
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-sm">{item.product?.name || 'Product'}</p>
                         <p className="text-gray-500 text-xs">
                           Size: {item.size}
                           {item.color && `, Color: ${item.color}`}
                         </p>
-                        <p className="text-gray-500 text-xs">
-                          Qty: {item.quantity} × ₹{item.product?.price || 0}
-                        </p>
+                        <div className="flex justify-between items-center mt-1">
+                          <p className="text-gray-500 text-xs">
+                            Qty: {item.quantity}
+                          </p>
+                          <p className="font-semibold text-sm">
+                            ₹{((item.product?.price || 0) * item.quantity).toFixed(2)}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   ))}

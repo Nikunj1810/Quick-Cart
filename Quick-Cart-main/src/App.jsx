@@ -1,4 +1,3 @@
-
 import React from 'react';
 import "./App.css";
 import { Toaster } from "./components/ui/toaster";
@@ -16,11 +15,15 @@ import Home from "./pages/Home";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import OrderConfirmation from "./pages/OrderConfirmation";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AboutUs from "./pages/AboutUs";
 import ContactUs from "./pages/ContactUs";
 import NotFound from "./pages/NotFound";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // Admin Pages
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -34,89 +37,35 @@ import AdminLayout from "./components/layout/AdminLayout";
 const queryClient = new QueryClient();
 
 const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Home />,
-  },
-  {
-    path: "/shop",
-    element: <Shop />,
-  },
-  {
-    path: "/category/:category",
-    element: <Shop />,
-  },
-  {
-    path: "/product/:productId",
-    element: <ProductDetail />,
-  },
-  {
-    path: "/cart",
-    element: <Cart />,
-  },
-  {
-    path: "/login",
-    element: <Login />,
-  },
-  {
-    path: "/register",
-    element: <Register />,
-  },
-  {
-    path: "/about-us",
-    element: <AboutUs />,
-  },
-  {
-    path: "/contact-us",
-    element: <ContactUs />,
-  },
-  {
-    path: "/profile",
-    element: <Profile />,
-  },
-  {
-    path: "/admin/login",
-    element: <AdminLogin />,
-  },
+  { path: "/", element: <Home /> },
+  { path: "/shop", element: <Shop /> },
+  { path: "/category/:category", element: <Shop /> },
+  { path: "/product/:productId", element: <ProductDetail /> },
+  { path: "/cart", element: <Cart /> },
+  { path: "/checkout", element: <Checkout /> },
+  { path: "/order-confirmation", element: <OrderConfirmation /> },
+  { path: "/login", element: <Login /> },
+  { path: "/register", element: <Register /> },
+  { path: "/forgotpassword", element: <ForgotPassword /> },
+  { path: "/reset-password", element: <ResetPassword /> },
+  { path: "/about-us", element: <AboutUs /> },
+  { path: "/contact-us", element: <ContactUs /> },
+  { path: "/profile", element: <Profile /> },
+  { path: "/admin/login", element: <AdminLogin /> },
   {
     path: "/admin",
     element: <AdminLayout />,
     children: [
-      {
-        index: true,
-        element: <AdminDashboard />,
-      },
-      {
-        path: "dashboard",
-        element: <AdminDashboard />,
-      },
-      {
-        path: "products",
-        element: <AdminProducts />,
-      },
-      {
-        path: "products/new",
-        element: <AdminProductDetails />,
-      },
-      {
-        path: "products/:productId",
-        element: <AdminProductDetails />,
-      },
-      {
-        path: "orders",
-        element: <AdminOrderList />,
-      },
-      {
-        path: "orders/:orderId",
-        element: <AdminOrderDetails />,
-      }
-      // Remove profile route from admin children
+      { index: true, element: <AdminDashboard /> },
+      { path: "dashboard", element: <AdminDashboard /> },
+      { path: "products", element: <AdminProducts /> },
+      { path: "products/new", element: <AdminProductDetails /> },
+      { path: "products/:productId", element: <AdminProductDetails /> },
+      { path: "orders", element: <AdminOrderList /> },
+      { path: "orders/:orderId", element: <AdminOrderDetails /> },
     ],
   },
-  {
-    path: "*",
-    element: <NotFound />,
-  },
+  { path: "*", element: <NotFound /> },
 ]);
 
 export function App() {
@@ -127,7 +76,16 @@ export function App() {
           <CartProvider>
             <AdminProvider>
               <Toaster />
-              <Sonner />
+              <Sonner
+                theme="light"
+                toastOptions={{
+                  style: {
+                    background: "#ffffff",
+                    color: "#000000",
+                    border: "1px solid #ccc",
+                  },
+                }}
+              />
               <RouterProvider router={router} />
             </AdminProvider>
           </CartProvider>
@@ -136,3 +94,4 @@ export function App() {
     </QueryClientProvider>
   );
 }
+  

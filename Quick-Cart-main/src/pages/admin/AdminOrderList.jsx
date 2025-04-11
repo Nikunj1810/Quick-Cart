@@ -5,14 +5,92 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useQuery } from "@tanstack/react-query";
 
-const ordersData = [
-  { id: '#25426', product: 'T-shirt', date: 'Nov 8th,2023', customer: 'Kavin', status: 'Delivered', amount: '₹200.00' },
-  { id: '#25425', product: 'Paint', date: 'Nov 7th,2023', customer: 'Komael', status: 'Canceled', amount: '₹200.00' },
-  { id: '#25424', product: 'Jens', date: 'Nov 6th,2023', customer: 'Nikhil', status: 'Delivered', amount: '₹200.00' },
-];
+
+const fetchOrders = async (page = 1, limit = 10) => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/orders?page=${page}&limit=${limit}`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({
+        status: response.status,
+        statusText: response.statusText
+      }));
+      console.error('API Error:', {
+        url: response.url,
+        status: response.status,
+        data: errorData
+      });
+      throw new Error(`Failed to fetch orders: ${response.status} - ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log('API Response:', data);
+    
+    if (!data.orders || !Array.isArray(data.orders)) {
+      throw new Error(`Invalid orders data structure. Received: ${JSON.stringify(data)}`);
+    }
+    
+    // Return both orders and pagination info
+    return {
+      orders: data.orders.map(order => ({
+      id: `#${order._id || ''}`,
+      product: order.items?.[0]?.name || 'Unknown',
+      date: new Date(order.orderDate).toLocaleDateString(),
+      customer: order.shippingInfo?.fullName || 'Unknown',
+      status: order.status,
+      amount: `₹${order.orderTotal?.toFixed(2) || '0.00'}`
+    })),
+      totalPages: data.totalPages,
+      currentPage: data.currentPage
+    };
+  } catch (error) {
+    console.error('Error fetching orders:', {
+      message: error.message,
+      stack: error.stack
+    });
+    throw new Error(`Failed to process orders data: ${error.message}`);
+  }
+};
 
 const AdminOrderList = () => {
+  const [page, setPage] = React.useState(1);
+  const { data, isLoading, error } = useQuery({ 
+    queryKey: ["orders", page], 
+    queryFn: () => fetchOrders(page) 
+  });
+  
+  const ordersData = data?.orders || [];
+
+  if (isLoading) return (
+  <div className="p-6 space-y-4">
+    {[...Array(5)].map((_, i) => (
+      <div key={i} className="animate-pulse flex space-x-4 bg-white p-4 rounded-lg shadow-sm">
+        <div className="flex-1 space-y-4 py-1">
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+if (error) return (
+  <div className="p-6 bg-red-50 border border-red-200 rounded-md">
+    <h3 className="text-red-800 font-medium">Error loading orders</h3>
+    <p className="text-red-600 mt-2">{error.message}</p>
+    <Button 
+      variant="outline" 
+      className="mt-4 bg-white"
+      onClick={() => window.location.reload()}
+    >
+      Retry
+    </Button>
+  </div>
+);
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -42,8 +120,8 @@ const AdminOrderList = () => {
         </div>
       </div>
       
-      <Card>
-        <div className="p-6 flex justify-between items-center border-b">
+      <Card className="border-0 shadow-lg">
+        <div className="p-6 flex justify-between items-center border-b bg-gradient-to-r from-blue-50 to-white">
           <h2 className="text-xl font-bold">Recent Purchases</h2>
           <button>
             <MoreVertical className="h-5 w-5" />
@@ -67,7 +145,7 @@ const AdminOrderList = () => {
             </TableHeader>
             <TableBody>
               {ordersData.map((order) => (
-                <TableRow key={order.id}>
+                <TableRow key={order.id} className="hover:bg-gray-50 transition-colors duration-150">
                   <TableCell>
                     <Checkbox />
                   </TableCell>
@@ -91,33 +169,65 @@ const AdminOrderList = () => {
       </Card>
       
       <div className="flex justify-center mt-10 gap-2">
-        <Button variant="outline" className="w-8 h-8 p-0 rounded-md" disabled>1</Button>
-        <Button variant="outline" className="w-8 h-8 p-0 rounded-md">2</Button>
-        <Button variant="outline" className="w-8 h-8 p-0 rounded-md">3</Button>
-        <Button variant="outline" className="w-8 h-8 p-0 rounded-md">4</Button>
-        <span className="flex items-center px-2">...</span>
-        <Button variant="outline" className="w-8 h-8 p-0 rounded-md">10</Button>
-        <Button variant="outline" className="px-3 rounded-md">NEXT</Button>
+        <Button 
+          variant="outline" 
+          className="w-8 h-8 p-0 rounded-md" 
+          disabled={page === 1}
+          onClick={() => setPage(p => Math.max(1, p - 1))}
+        >
+          &lt;
+        </Button>
+        
+        {Array.from({ length: Math.min(5, data?.totalPages || 1) }, (_, i) => {
+          const pageNum = i + 1;
+          return (
+            <Button
+              key={pageNum}
+              variant={pageNum === page ? "default" : "outline"}
+              className="w-8 h-8 p-0 rounded-md"
+              onClick={() => setPage(pageNum)}
+            >
+              {pageNum}
+            </Button>
+          );
+        })}
+        
+        <Button 
+          variant="outline" 
+          className="w-8 h-8 p-0 rounded-md" 
+          disabled={page === data?.totalPages}
+          onClick={() => setPage(p => Math.min(data?.totalPages || 1, p + 1))}
+        >
+          &gt;
+        </Button>
       </div>
     </div>
   );
 };
 
 const StatusBadge = ({ status }) => {
-  let color = "bg-gray-100";
+  let bgColor = "bg-gray-100";
+  let textColor = "text-gray-700";
   
   if (status === "Delivered") {
-    color = "text-green-700";
+    bgColor = "bg-green-100";
+    textColor = "text-green-700";
   } else if (status === "Canceled") {
-    color = "text-amber-600";
+    bgColor = "bg-red-100";
+    textColor = "text-red-700";
+  } else if (status === "Pending") {
+    bgColor = "bg-amber-100";
+    textColor = "text-amber-700";
+  } else if (status === "Processing") {
+    bgColor = "bg-blue-100";
+    textColor = "text-blue-700";
   }
   
   return (
-    <div className="flex items-center gap-1.5">
-      <div className={`w-1.5 h-1.5 rounded-full ${status === "Delivered" ? "bg-green-700" : "bg-amber-600"}`}></div>
-      <span className={color}>{status}</span>
-    </div>
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${bgColor} ${textColor}`}>
+      {status}
+    </span>
   );
 };
 
-export default AdminOrderList;
+export default AdminOrderList

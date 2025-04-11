@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner"; // ✅ Using Sonner now
 import { cartApi } from "@/services/api";
 import { useUser } from "@/context/UserContext";
 
@@ -33,11 +33,7 @@ export const CartProvider = ({ children }) => {
           setCartCount(0);
         } else {
           setError(err.message);
-          toast({
-            title: "Error",
-            description: "Failed to fetch cart",
-            variant: "destructive",
-          });
+          toast.error("Failed to fetch cart");
         }
       } finally {
         setLoading(false);
@@ -58,28 +54,15 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = async (product, quantity, size, sizeType) => {
     if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please login to add items to your cart",
-        variant: "destructive"
-      });
+      toast.error("Please login to add items to your cart");
       return;
     }
     if (!product || !product._id) {
-      toast({
-        title: "Error",
-        description: "Invalid product information",
-        variant: "destructive",
-      });
+      toast.error("Invalid product information");
       return;
     }
-
     if (quantity < 1) {
-      toast({
-        title: "Error",
-        description: "Quantity must be at least 1",
-        variant: "destructive",
-      });
+      toast.error("Quantity must be at least 1");
       return;
     }
 
@@ -88,17 +71,10 @@ export const CartProvider = ({ children }) => {
       await cartApi.addToCart(product._id, quantity, size, sizeType);
       const cartData = await cartApi.getCart();
       setCart(cartData.items || []);
-      toast({
-        title: "Added to cart",
-        description: `${product.name} added to your cart.`,
-      });
+      toast.success(`${product.name} added to your cart.`);
     } catch (err) {
       setError(err.message);
-      toast({
-        title: "Error",
-        description: err.message || "Failed to add item to cart",
-        variant: "destructive",
-      });
+      toast.error(err.message || "Failed to add item to cart");
     } finally {
       setLoading(false);
     }
@@ -106,11 +82,7 @@ export const CartProvider = ({ children }) => {
 
   const removeFromCart = async (productId, size = 'M', sizeType = 'standard') => {
     if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please login to remove items from your cart",
-        variant: "destructive"
-      });
+      toast.error("Please login to remove items from your cart");
       return;
     }
     try {
@@ -118,17 +90,10 @@ export const CartProvider = ({ children }) => {
       await cartApi.removeFromCart(productId, size, sizeType);
       const cartData = await cartApi.getCart();
       setCart(cartData.items || []);
-      toast({
-        title: "Item removed",
-        description: "Product removed from your cart.",
-      });
+      toast.success("Product removed from your cart.");
     } catch (err) {
       setError(err.message);
-      toast({
-        title: "Error",
-        description: err.message || "Failed to remove item from cart",
-        variant: "destructive",
-      });
+      toast.error(err.message || "Failed to remove item from cart");
     } finally {
       setLoading(false);
     }
@@ -136,11 +101,7 @@ export const CartProvider = ({ children }) => {
 
   const updateQuantity = async (productId, quantity, size = 'M', sizeType = 'standard') => {
     if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please login to update your cart",
-        variant: "destructive"
-      });
+      toast.error("Please login to update your cart");
       return;
     }
     if (quantity <= 0) {
@@ -155,11 +116,7 @@ export const CartProvider = ({ children }) => {
       setCart(cartData.items || []);
     } catch (err) {
       setError(err.message);
-      toast({
-        title: "Error",
-        description: "Failed to update cart quantity",
-        variant: "destructive",
-      });
+      toast.error("Failed to update cart quantity");
     } finally {
       setLoading(false);
     }
@@ -167,28 +124,17 @@ export const CartProvider = ({ children }) => {
 
   const clearCart = async () => {
     if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please login to clear your cart",
-        variant: "destructive"
-      });
+      toast.error("Please login to clear your cart");
       return;
     }
     try {
       setLoading(true);
       await cartApi.clearCart();
       setCart([]);
-      toast({
-        title: "Cart cleared",
-        description: "All items have been removed from your cart.",
-      });
+      toast.success("All items have been removed from your cart.");
     } catch (err) {
       setError(err.message);
-      toast({
-        title: "Error",
-        description: "Failed to clear cart",
-        variant: "destructive",
-      });
+      toast.error("Failed to clear cart");
     } finally {
       setLoading(false);
     }

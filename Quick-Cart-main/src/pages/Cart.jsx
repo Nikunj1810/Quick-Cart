@@ -4,6 +4,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import { Minus, Plus, Trash2, Loader } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { toast } from "@/components/ui/use-toast";
+import { formatIndianRupee } from "@/utils/currency";
 
 const Cart = () => {
   const { cart, removeFromCart, updateQuantity, cartTotal } = useCart();
@@ -156,7 +157,7 @@ const Cart = () => {
                             </button>
                           </div>
 
-                          <p className="font-medium">₹ {item.product?.price || 0}</p>
+                          <p className="font-medium">{formatIndianRupee(item.product?.price || 0)}</p>
                         </div>
                       </div>
                     </div>
@@ -173,18 +174,18 @@ const Cart = () => {
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Subtotal</span>
-                    <span className="font-medium">₹{localCartTotal.toFixed(2)}</span>
+                    <span className="font-medium">{formatIndianRupee(localCartTotal)}</span>
                   </div>
 
                   <div className="flex justify-between">
                     <span className="text-gray-600">Delivery Fee</span>
-                    <span className="font-medium">₹{deliveryFee.toFixed(2)}</span>
+                    <span className="font-medium">{formatIndianRupee(deliveryFee)}</span>
                   </div>
 
                   <div className="border-t border-gray-200 pt-4">
                     <div className="flex justify-between font-bold">
                       <span>Total</span>
-                      <span>₹{(localCartTotal + deliveryFee).toFixed(2)}</span>
+                      <span>{formatIndianRupee(localCartTotal + deliveryFee)}</span>
                     </div>
                   </div>
                 </div>

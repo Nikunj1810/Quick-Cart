@@ -2,14 +2,14 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
 import { LogOut, User } from "lucide-react";
+import { useUser } from "@/context/UserContext";
+import { toast as sonnerToast } from "sonner"; // ✅ Sonner toast
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const user = JSON.parse(localStorage.getItem("user"));
-  const [isLoading, setIsLoading] = useState(false);
+  const { user, logout: userLogout } = useUser();
+  const [isLoading] = useState(false);
 
   // Redirect if not logged in
   if (!user) {
@@ -18,53 +18,36 @@ const Profile = () => {
   }
 
   const handleLogout = async () => {
-    setIsLoading(true);
-    
     try {
-      // Show buffer screen for 2 seconds before starting logout
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Clear user session
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-      localStorage.removeItem("sessionExpires");
-      
-      toast({
-        title: "Goodbye!",
-        description: "You have been successfully logged out from your account.",
-        variant: "default",
-        className: "bg-white border-green-500 text-black",
+      userLogout();
+
+      sonnerToast.success("You have been successfully logged out.", {
+        description: "Goodbye!",
+        style: {
+          backgroundColor: "white", 
+          color: "black",
+          borderRadius: "0.5rem",
+          fontWeight: "bold",
+        },
       });
 
-      // Delay navigation to show toast, but don't reload the page
-      setTimeout(() => {
-        navigate("/");
-        // Removed window.location.reload() to prevent white screen issues
-      }, 2000);
+      navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
-      toast({
-        title: "Error",
-        description: "An error occurred while logging out.",
-        variant: "destructive",
-        className: "bg-white border-red-500 text-black",
+
+      sonnerToast.error("An error occurred while logging out.", {
+        style: {
+          backgroundColor: "#ef4444", // red
+          color: "white",
+          borderRadius: "0.5rem",
+          fontWeight: "bold",
+        },
       });
-      setIsLoading(false);
     }
   };
 
   return (
     <MainLayout>
-      {/* Buffer Screen */}
-      {isLoading && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col items-center">
-            <div className="w-16 h-16 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-            <p className="mt-4 text-lg font-semibold text-gray-700">Logging out...</p>
-          </div>
-        </div>
-      )}
-
       <div className="container mx-auto py-12 px-4 flex flex-col items-center">
         <div className="max-w-lg w-full bg-white shadow-md rounded-xl p-8 border border-gray-200">
           <div className="flex items-center space-x-4">
@@ -119,7 +102,6 @@ const Profile = () => {
             {isLoading ? "Logging out..." : "Logout"}
             {!isLoading && <LogOut className="ml-2 h-5 w-5" />}
           </Button>
-
         </div>
       </div>
     </MainLayout>

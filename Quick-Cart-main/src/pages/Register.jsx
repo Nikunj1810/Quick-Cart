@@ -5,10 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowRight } from "lucide-react";
 import { useUser } from "@/context/UserContext";
-import { useToast } from "@/components/ui/use-toast";  // Add this import
+import { toast as sonnerToast } from "sonner"; // ✅ Sonner toast
 
 function Register() {
-  const { toast } = useToast();  // Add this hook
   const navigate = useNavigate();
   const { register } = useUser();
 
@@ -32,53 +31,61 @@ function Register() {
   }
 
   async function handleSubmit(e) {
-      e.preventDefault();
-      setIsLoading(true);
-  
-      try {
-          const response = await fetch('http://localhost:5000/api/register', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(formData)
-          });
-  
-          const data = await response.json();
-  
-          if (response.ok) {
-              setFormData({
-                  firstName: "",
-                  lastName: "",
-                  phone: "",
-                  address: "",
-                  email: "",
-                  password: "",
-              });
-              toast({
-                  title: "Success",
-                  description: "Registration successful!",
-                  variant: "default",
-                  className: "bg-white border-green-500 text-green-500", // Add solid background
-              });
-          } else {
-              toast({
-                  title: "Error",
-                  description: data.error || "Registration failed",
-                  variant: "destructive",
-                  className: "bg-white border-red-500 text-red-500", // Add solid background
-              });
-          }
-      } catch (error) {
-          console.error("Registration error:", error);
-          toast({
-              title: "Error",
-              description: "Registration failed. Please try again.",
-              variant: "destructive",
-          });
-      } finally {
-          setIsLoading(false);
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setFormData({
+          firstName: "",
+          lastName: "",
+          phone: "",
+          address: "",
+          email: "",
+          password: "",
+        });
+
+        sonnerToast.success("Registration successful!", {
+          style: {
+            backgroundColor: "white", 
+            color: "black",
+            borderRadius: "0.5rem",
+            fontWeight: "bold",
+          },
+        });
+      } else {
+        sonnerToast.error(data.error || "Registration failed", {
+          style: {
+            backgroundColor: "#ef4444", // Red
+            color: "white",
+            borderRadius: "0.5rem",
+            fontWeight: "bold",
+          },
+        });
       }
+    } catch (error) {
+      console.error("Registration error:", error);
+      sonnerToast.error("Registration failed. Please try again.", {
+        style: {
+          backgroundColor: "#ef4444",
+          color: "white",
+          borderRadius: "0.5rem",
+          fontWeight: "bold",
+        },
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (

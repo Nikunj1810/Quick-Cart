@@ -1,13 +1,12 @@
-import React from "react";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import ProductGrid from "@/components/product/ProductGrid";
 import { useAdmin } from "@/context/AdminContext";
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import ProductFilterSidebar from "@/components/product/ProductFilterSidebar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import AdminQuickAccess from "@/components/admin/AdminQuickAccess";
 
 const Shop = () => {
   const { category } = useParams();
@@ -40,19 +39,39 @@ const Shop = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const categoryParam = category ? `&category=${category}` : '';
-        const response = await fetch(`http://localhost:5000/api/products?page=${page}&limit=10${categoryParam}`);
+        // Get category from either URL params or search params
+        const categoryFilter = searchParams.get('categories');
+        const categoryParam = categoryFilter ? `&category=${categoryFilter}` : category ? `&category=${category}` : '';
+        
+        // Get price range from search params
+        const priceParam = searchParams.get('price');
+        let priceRangeParam = '';
+        if (priceParam) {
+          const [min, max] = priceParam.split(',').map(Number);
+          priceRangeParam = `&minPrice=${min}&maxPrice=${max}`;
+        }
+        
+        // Build the API URL with proper parameters
+        const apiUrl = `http://localhost:5000/api/products?page=${page}&limit=10${categoryParam}${priceRangeParam}`;
+        console.log('Fetching products from:', apiUrl);
+        
+        const response = await fetch(apiUrl);
         if (!response.ok) throw new Error('Failed to fetch products');
         const data = await response.json();
         setProducts(data.products);
-        setTotalPages(data.totalPages);
+        setTotalPages(data.pagination?.pages || 1);
       } catch (error) {
         console.error('Error fetching products:', error);
       }
     };
 
     fetchProducts();
-  }, [page, category]);
+  }, [page, category, searchParams]);
+  
+  // Reset page when category changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchParams.get('categories'), category]);
   
   const handleNextPage = () => {
     if (page < totalPages) {
@@ -61,36 +80,23 @@ const Shop = () => {
   };
 
   useEffect(() => {
-    let filteredProducts = products;
-
-    const categoryFilter = searchParams.get('categories');
-    if (categoryFilter) {
-      const selectedCategories = categoryFilter.split(',');
-      filteredProducts = filteredProducts.filter(product => selectedCategories.includes(product.category));
-    }
-
-    const priceFilter = searchParams.get('price');
-    if (priceFilter) {
-      const [minPrice, maxPrice] = priceFilter.split(',').map(Number);
-      filteredProducts = filteredProducts.filter(product => product.price >= minPrice && product.price <= maxPrice);
-    }
-
+    // Handle sorting only - filtering is now handled by the API
     const sortParam = searchParams.get('sort');
     if (sortParam) {
       setSortBy(sortParam);
+      let sortedProducts = [...products];
+      
       if (sortParam === 'price-asc') {
-        filteredProducts.sort((a, b) => a.price - b.price);
+        sortedProducts.sort((a, b) => a.price - b.price);
       } else if (sortParam === 'price-desc') {
-        filteredProducts.sort((a, b) => b.price - a.price);
+        sortedProducts.sort((a, b) => b.price - a.price);
       } else {
-        filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+        sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
       }
-    } else {
-      filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+      
+      setProducts(sortedProducts);
     }
-
-    setProducts(filteredProducts);
-  }, [searchParams, products]);
+  }, [searchParams.get('sort'), products]);
 
   const handlePriceChange = (value) => {
     setPriceRange(value);
@@ -118,7 +124,9 @@ const Shop = () => {
           <div className="flex-1">
             <div className="mb-6">
               <h1 className="text-2xl font-bold mb-2">
-                {category ? `${category} Collection` : "All Products"}
+                {searchParams.get('categories') ? 
+                  `${categories.find(cat => cat._id === searchParams.get('categories') || cat.id === searchParams.get('categories'))?.name || searchParams.get('categories')} Collection` : 
+                  category ? `${category} Collection` : "All Products"}
               </h1>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-500">

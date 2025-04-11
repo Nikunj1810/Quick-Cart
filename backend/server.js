@@ -4,6 +4,7 @@ import cors from "cors";
 import path from "path";
 import multer from "multer";
 import fs from "fs";
+import crypto from 'crypto';
 import { fileURLToPath } from "url";
 import { connectDB } from "./config/db.js";
 import QuickcartModel from "./models/register.model.js";
@@ -13,6 +14,7 @@ import CategoryModel from "./models/category.model.js";
 import { ContactModel } from "./models/contact.model.js";
 import CartModel from "./models/cart.model.js";
 import OrderModel from "./models/order.model.js";
+import { sendPasswordResetEmail } from './utils/emailService.js';
 
 // Get directory in ES module
 const __filename = fileURLToPath(import.meta.url);
@@ -397,11 +399,90 @@ app.post("/api/login", async (req, res) => {
         
         const isMatch = await user.comparePassword(password);
         if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
-        if (!user) return res.status(401).json({ error: "Invalid credentials" });
+        
         res.json({ message: "Login successful", user });
     } catch (err) {
         console.error("Login error:", err);
         res.status(500).json({ error: "Failed to login", details: err.message });
+    }
+});
+
+// --- FORGOT PASSWORD ---
+app.post("/api/forgot-password", async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ error: "Email is required" });
+        
+        // Check if user exists
+        const user = await QuickcartModel.findOne({ email });
+        if (!user) {
+            // For security reasons, don't reveal that the email doesn't exist
+            return res.status(200).json({ message: "If your email is registered, you will receive a password reset link" });
+        }
+        
+        // Generate a reset token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetTokenExpiry = Date.now() + 3600000; // 1 hour from now
+        
+        // Save the token to the user record
+        user.resetToken = resetToken;
+        user.resetTokenExpiry = resetTokenExpiry;
+        await user.save();
+        
+        // Send the password reset email
+        const emailResult = await sendPasswordResetEmail(email, resetToken);
+        
+        if (!emailResult.success) {
+            console.error('Failed to send password reset email:', emailResult.error);
+            return res.status(500).json({ error: "Error sending reset link. Please try again." });
+        }
+        
+        // In development mode, return the preview URL so the user can view the test email
+        // In production, this would be removed and emails would be sent directly
+        if (process.env.NODE_ENV !== 'production' && emailResult.previewUrl) {
+            return res.status(200).json({ 
+                message: "Password reset instructions sent to your email", 
+                note: "Since this is a test environment, the email is not actually sent. Please use the preview URL below to view the email:",
+                previewUrl: emailResult.previewUrl 
+            });
+        }
+        
+        res.status(200).json({ message: "Password reset instructions sent to your email" });
+    } catch (error) {
+        console.error("Forgot password error:", error);
+        res.status(500).json({ error: "Failed to process password reset request", details: error.message });
+    }
+});
+
+// --- RESET PASSWORD ---
+app.post("/api/reset-password", async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+        
+        if (!token || !newPassword) {
+            return res.status(400).json({ error: "Token and new password are required" });
+        }
+        
+        // Find user with the given token and valid expiry
+        const user = await QuickcartModel.findOne({
+            resetToken: token,
+            resetTokenExpiry: { $gt: Date.now() }
+        });
+        
+        if (!user) {
+            return res.status(400).json({ error: "Invalid or expired reset token" });
+        }
+        
+        // Update the user's password
+        user.password = newPassword;
+        user.resetToken = undefined;
+        user.resetTokenExpiry = undefined;
+        await user.save();
+        
+        res.status(200).json({ message: "Password has been reset successfully" });
+    } catch (error) {
+        console.error("Reset password error:", error);
+        res.status(500).json({ error: "Failed to reset password", details: error.message });
     }
 });
 //admin.login

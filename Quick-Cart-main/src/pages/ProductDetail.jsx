@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { isLoggedIn } from "@/utils/auth";
+import { formatIndianRupee } from "@/utils/currency";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
@@ -14,14 +15,13 @@ import {
 } from "@/components/ui/dialog";
 import { useCart } from "@/context/CartContext";
 import { useAdmin } from "@/context/AdminContext";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner"; // ✅ Sonner import
 
 const ProductDetail = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { isAuthenticated: isAdmin } = useAdmin();
-  const { toast } = useToast();
 
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState(null);
@@ -45,49 +45,37 @@ const ProductDetail = () => {
         setProduct(data);
       } catch (error) {
         console.error("Error fetching product:", error);
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-          className: "bg-white border-red-500 text-red-500"
-        });
+        toast.error(error.message || "Product not found");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchProduct();
-  }, [productId, toast]);
+  }, [productId]);
 
   const handleAddToCart = async () => {
     if (!isLoggedIn()) {
       setShowLoginDialog(true);
       return;
     }
-
     if (!selectedSize) {
-      toast({
-        title: "Error",
-        description: "Please select a size",
-        variant: "destructive",
-        className: "bg-white border-black text-black rounded-lg shadow-lg"
+      toast.error("Please select a size", {
+        style: {
+          backgroundColor: "white",
+          color: "black",
+        },
       });
       return;
     }
-    
-    // Determine size type based on product category or default to standard
+
     const sizeType = product.category?.includes('pants') ? 'waist' : 'standard';
 
     try {
       setIsLoading(true);
       await addToCart(product, quantity, selectedSize, sizeType);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add item to cart",
-        variant: "destructive",
-        className: "bg-white border-red-500 text-red-500"
-      });
+      toast.error(error.message || "Failed to add item to cart");
     } finally {
       setIsLoading(false);
     }
@@ -101,17 +89,10 @@ const ProductDetail = () => {
           { method: "DELETE" }
         );
         if (!response.ok) throw new Error("Failed to delete product");
-        toast({
-          title: "Success",
-          description: "Product deleted successfully",
-        });
+        toast.success("Product deleted successfully");
         navigate("/admin/products");
       } catch (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
+        toast.error(error.message || "Failed to delete product");
       }
     }
   };
@@ -146,7 +127,7 @@ const ProductDetail = () => {
     <MainLayout>
       <div className="container mx-auto py-8 px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Product Image */}
+          {/* Image */}
           <div className="relative h-[300px] md:h-[400px] w-full max-w-[500px] mx-auto rounded-xl overflow-hidden">
             <div className="w-full h-full overflow-hidden rounded-xl bg-gray-50">
               <img
@@ -157,24 +138,17 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          {/* Product Details */}
+          {/* Details */}
           <div className="space-y-8">
             <div>
-              {/* Optional: New Arrival Tag */}
-              {/* {product.isNewArrival && (
-                <span className="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold mb-2">
-                  🆕 New Arrival
-                </span>
-              )} */}
-
               <h1 className="text-4xl font-bold mb-4">{product.name}</h1>
 
               <div className="flex items-center gap-4">
-                <p className="text-3xl font-bold text-black">₹{product.price}</p>
+                <p className="text-3xl font-bold text-black">{formatIndianRupee(product.price)}</p>
                 {product.originalPrice > product.price && (
                   <>
                     <p className="text-xl text-gray-400 line-through">
-                      ₹{product.originalPrice}
+                      {formatIndianRupee(product.originalPrice)}
                     </p>
                     <span className="px-3 py-1 bg-red-100 text-red-600 text-sm font-semibold rounded-full animate-pulse">
                       {discountPercent}% OFF
@@ -223,7 +197,6 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {/* Quantity Selector */}
             <div>
               <h3 className="text-base font-semibold mb-4">Quantity</h3>
               <div className="flex items-center gap-4 w-fit border-2 border-gray-200 rounded-lg p-1">
@@ -257,19 +230,19 @@ const ProductDetail = () => {
 
             {/* Login Dialog */}
             <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-              <DialogContent className="sm:max-w-[425px] bg-white shadow-2xl border-2 border-black/10 rounded-[32px] transform transition-all duration-300 ease-in-out hover:scale-[1.02] hover:border-black/20">
+              <DialogContent className="sm:max-w-[425px] bg-white shadow-2xl border-2 border-black/10 rounded-[32px]">
                 <DialogHeader className="space-y-3">
                   <DialogTitle className="text-3xl font-bold text-center bg-gradient-to-r from-black to-gray-700 bg-clip-text text-transparent">
                     Login Required
                   </DialogTitle>
-                  <DialogDescription className="text-center text-base text-gray-600 leading-relaxed">
+                  <DialogDescription className="text-center text-base text-gray-600">
                     Please login or create an account to add items to your cart and start shopping!
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col gap-5 py-6">
                   <Button
                     variant="outline"
-                    className="w-full py-6 text-lg font-medium rounded-2xl border-2 hover:bg-black hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
+                    className="w-full py-6 text-lg font-medium rounded-2xl border-2 hover:bg-black hover:text-white"
                     onClick={() => {
                       setShowLoginDialog(false);
                       navigate("/login");
@@ -286,7 +259,7 @@ const ProductDetail = () => {
                     </div>
                   </div>
                   <Button
-                    className="w-full py-6 text-lg font-medium bg-black text-white rounded-2xl transform transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl hover:bg-gray-900"
+                    className="w-full py-6 text-lg font-medium bg-black text-white rounded-2xl hover:scale-105"
                     onClick={() => {
                       setShowLoginDialog(false);
                       navigate("/signup");
@@ -298,19 +271,13 @@ const ProductDetail = () => {
               </DialogContent>
             </Dialog>
 
-            {/* Admin Actions */}
+            {/* Admin */}
             {isAdmin && (
               <div className="flex gap-6 pt-4 border-t">
-                <Link
-                  to={`/admin/products/${productId}`}
-                  className="text-blue-600 hover:text-blue-800"
-                >
+                <Link to={`/admin/products/${productId}`} className="text-blue-600 hover:text-blue-800">
                   <Pencil className="w-5 h-5" /> Edit Product
                 </Link>
-                <button
-                  onClick={handleDeleteProduct}
-                  className="text-red-600 hover:text-red-800"
-                >
+                <button onClick={handleDeleteProduct} className="text-red-600 hover:text-red-800">
                   <Trash2 className="w-5 h-5" /> Delete Product
                 </button>
               </div>

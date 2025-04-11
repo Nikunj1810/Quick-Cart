@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowRight } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useUser } from "@/context/UserContext";
+import { toast as sonnerToast } from "sonner"; // ✅ added
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
- 
+  const { login } = useUser();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,42 +41,29 @@ const Login = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const result = await login({ email, password });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Set session expiration
-        const expirationTime = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // 30 days or 24 hours
+      if (result.success) {
+        const expirationTime = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
         const expirationDate = new Date(Date.now() + expirationTime);
-        
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("token", data.token);
         localStorage.setItem("sessionExpires", expirationDate.toISOString());
 
-        toast({
-          title: "Welcome back!",
-          description: `Welcome, ${data.user.firstName}! Login successful.`,
-          variant: "default",
-          className: "bg-white border-green-500 text-black",
+        // ✅ Show success toast using sonner
+        sonnerToast.success("Login successful! Welcome back.", {
+          style: {
+            backgroundColor: "white",
+            color: "black",
+            borderRadius: "0.5rem",
+            fontWeight: "bold",
+          },
         });
 
-        // Delay for buffer screen visibility, but don't reload the page
-        setTimeout(() => {
-          navigate("/");
-          // Removed window.location.reload() to prevent white screen issues
-        }, 2000);
+        navigate("/");
       } else {
-        setErrorMessage(data.error || "Invalid email or password");
+        setErrorMessage(result.error || "Invalid email or password");
         toast({
           title: "Error",
-          description: data.error || "Invalid email or password",
+          description: result.error || "Invalid email or password",
           variant: "destructive",
           className: "bg-white border-red-500 text-black",
         });
@@ -95,22 +84,9 @@ const Login = () => {
 
   return (
     <MainLayout>
-      {/* Buffer Screen with improved animation and blur effect */}
-      {isLoading && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-md transition-all duration-300 ease-in-out z-50">
-          <div className="bg-white/90 p-8 rounded-xl shadow-2xl flex flex-col items-center transform transition-all duration-500 scale-100 opacity-100">
-            <div className="w-16 h-16 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin transition-all duration-1000 ease-in-out"></div>
-            <p className="mt-4 text-lg font-semibold text-gray-800 animate-pulse">Logging in...</p>
-          </div>
-        </div>
-      )},
-
       <div className="container mx-auto py-12 px-4 flex flex-col items-center">
         <div className="flex items-center gap-2 text-sm mb-8">
-          <Link
-            to="/"
-            className="text-gray-500 hover:text-black transition-colors"
-          >
+          <Link to="/" className="text-gray-500 hover:text-black transition-colors">
             Home
           </Link>
           <span className="text-gray-400">/</span>
@@ -133,10 +109,7 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email Address
               </label>
               <Input
@@ -152,10 +125,7 @@ const Login = () => {
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password
               </label>
               <Input
@@ -176,21 +146,17 @@ const Login = () => {
                 checked={rememberMe}
                 onCheckedChange={(checked) => setRememberMe(checked === true)}
               />
-              <label
-                htmlFor="remember-me"
-                className="text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="remember-me" className="text-sm font-medium text-gray-700">
                 Keep me logged in
               </label>
             </div>
 
             <Button
               type="submit"
-              className={`w-full bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-800 hover:to-blue-950 text-white py-3 rounded-lg flex items-center justify-center transition-all duration-300 transform ${isLoading ? "opacity-50 cursor-not-allowed" : "hover:scale-105"
-                }`}
+              className={`w-full bg-black hover:bg-gray-900 text-white py-3 rounded-lg flex items-center justify-center transition-all duration-300 transform ${isLoading ? "opacity-50 cursor-not-allowed" : "hover:scale-105"}`}
               disabled={isLoading}
             >
-              {isLoading ? "Logging in..." : "EMAIL LOGIN"}
+              {isLoading ? "Logging in..." : "LOGIN"}
               {!isLoading && (
                 <ArrowRight className="ml-2 h-5 w-5 animate-bounce" />
               )}
@@ -203,7 +169,6 @@ const Login = () => {
                 Admin Login
               </Button>
             </Link>
-
           </form>
 
           <div className="text-center mt-4">
@@ -224,10 +189,8 @@ const Login = () => {
               >
                 Sign Up
               </Button>
-
             </Link>
           </div>
-
         </div>
       </div>
     </MainLayout>

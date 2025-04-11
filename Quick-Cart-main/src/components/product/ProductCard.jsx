@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { formatIndianRupee } from "@/utils/currency";
 
 const ProductCard = ({ product }) => {
   return (
@@ -23,9 +24,9 @@ const ProductCard = ({ product }) => {
           </h3>
 
           <div className="flex items-center gap-2 mt-2">
-            <p className="text-lg font-bold text-black">₹ {product.price}</p>
+            <p className="text-lg font-bold text-black">{formatIndianRupee(product.price)}</p>
             {product.originalPrice && (
-              <p className="text-sm text-gray-500 line-through">₹ {product.originalPrice}</p>
+              <p className="text-sm text-gray-500 line-through">{formatIndianRupee(product.originalPrice)}</p>
             )}
           </div>
         </div>

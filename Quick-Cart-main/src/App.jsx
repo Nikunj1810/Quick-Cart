@@ -30,6 +30,7 @@ import AdminProductDetails from "./pages/admin/AdminProductDetails";
 import AdminOrderList from "./pages/admin/AdminOrderList";
 import AdminOrderDetails from "./pages/admin/AdminOrderDetails";
 import AdminLayout from "./components/layout/AdminLayout";
+import CustomerQueries from "./pages/admin/CustomerQueries";
 
 const queryClient = new QueryClient();
 
@@ -82,35 +83,13 @@ const router = createBrowserRouter([
     path: "/admin",
     element: <AdminLayout />,
     children: [
-      {
-        index: true,
-        element: <AdminDashboard />,
-      },
-      {
-        path: "dashboard",
-        element: <AdminDashboard />,
-      },
-      {
-        path: "products",
-        element: <AdminProducts />,
-      },
-      {
-        path: "products/new",
-        element: <AdminProductDetails />,
-      },
-      {
-        path: "products/:productId",
-        element: <AdminProductDetails />,
-      },
-      {
-        path: "orders",
-        element: <AdminOrderList />,
-      },
-      {
-        path: "orders/:orderId",
-        element: <AdminOrderDetails />,
-      }
-      // Remove profile route from admin children
+      { index: true, element: <AdminDashboard /> },
+      { path: "dashboard", element: <AdminDashboard /> },
+      { path: "products", element: <AdminProducts /> },
+      { path: "products/new", element: <AdminProductDetails /> },
+      { path: "products/:productId", element: <AdminProductDetails /> },
+      { path: "orders", element: <AdminOrderList /> },
+      { path: "orders/:orderId", element: <AdminOrderDetails /> },
     ],
   },
   {

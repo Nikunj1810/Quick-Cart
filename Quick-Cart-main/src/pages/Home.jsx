@@ -79,19 +79,35 @@ const Home = () => {
       </section>
 
       {/* New Arrivals */}
+<<<<<<< Updated upstream
       <section className="py-16">
         <div className="container px-4 mx-auto">
           <h1 className="mb-8 text-5xl font-extrabold text-center uppercase">New Arrivals</h1>
           
+=======
+      <section className="py-10 bg-white">
+        <div className="max-w-[1500px] mx-auto px-4">
+          <h1 className="mb-8 text-5xl font-extrabold text-center uppercase text-black">
+            New Arrivals
+          </h1>
+
+>>>>>>> Stashed changes
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
             {newArrivals.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
+<<<<<<< Updated upstream
           
           <div className="mt-8 text-center">
             <Link to="/shop">
               <Button variant="outline" className="gap-2">
+=======
+
+          <div className="mt-8 text-center">
+            <Link to="/shop">
+              <Button className="gap-2 rounded-full border border-black text-black hover:bg-black hover:text-white transition">
+>>>>>>> Stashed changes
                 View All <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
@@ -100,19 +116,35 @@ const Home = () => {
       </section>
       
       {/* Top Selling */}
+<<<<<<< Updated upstream
       <section className="py-16 bg-gray-50">
         <div className="container px-4 mx-auto">
           <h2 className="mb-8 text-2xl font-bold lowercase">top selling</h2>
           
+=======
+      <section className="py-10 bg-white">
+        <div className="max-w-[1500px] mx-auto px-4">
+          <h1 className="mb-8 text-5xl font-extrabold text-center uppercase text-black">
+            Top Selling
+          </h1>
+
+>>>>>>> Stashed changes
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
             {topSelling.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
+<<<<<<< Updated upstream
           
           <div className="mt-8 text-center">
           <Link to="/shop">
               <Button variant="outline" className="gap-2">
+=======
+
+          <div className="mt-8 text-center">
+            <Link to="/shop">
+              <Button className="gap-2 rounded-full border border-black text-black hover:bg-black hover:text-white transition">
+>>>>>>> Stashed changes
                 View All <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>

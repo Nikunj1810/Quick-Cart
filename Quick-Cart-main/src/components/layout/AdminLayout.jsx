@@ -68,6 +68,15 @@ const AdminLayout = () => {
           >
             <span className="flex-1">ORDER LIST</span>
           </Link>
+
+          <Link
+            to="/admin/customer-queries"
+            className={`flex items-center px-4 py-2.5 text-sm ${
+              isActive("/admin/customer-queries") ? "bg-slate-100 font-medium" : ""
+            }`}
+          >
+            <span className="flex-1">CUSTOMER QUERIES</span>
+          </Link>
         </div>
 
         <div className="mt-6">

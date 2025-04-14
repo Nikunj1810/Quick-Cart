@@ -37,13 +37,30 @@ const AdminLogin = () => {
       if (response.ok) {
         localStorage.setItem("admin", JSON.stringify(data.admin));
         localStorage.setItem("adminToken", data.token);
+<<<<<<< Updated upstream
         await login(email, password, rememberMe);
+=======
+        await login(email, password, true); // Set remember=true to persist admin session
+
+        toast.success("Login successful", {
+          description: "Welcome to QuickCart Admin Dashboard!",
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+>>>>>>> Stashed changes
         navigate("/admin/dashboard");
       } else {
         console.error("Login error:", data.error);
       }
+<<<<<<< Updated upstream
     } catch (error) {
       console.error("Login error:", error);
+=======
+    } catch {
+      toast.error("Login failed", {
+        description: "Something went wrong. Please try again.",
+      });
+>>>>>>> Stashed changes
     } finally {
       setIsLoading(false);
     }

@@ -140,49 +140,80 @@ const Home = () => {
       </section>
 
       {/* New Arrivals */}
-      <section className="py-10 px-4">
-        <div className="container mx-auto">
-          <div className="p-8 rounded-xl shadow-lg bg-gray-100 border border-gray-300">
-            <h1 className="mb-8 text-5xl font-extrabold text-center uppercase text-black">
-              New Arrivals
-            </h1>
-
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
-              {newArrivals.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-
-            <div className="mt-8 text-center">
-              <Link to="/shop">
-                <Button className="gap-2 rounded-full bg-black text-white hover:bg-gray-800">
-                  View All <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
-            </div>
+      <section className="py-10 bg-white">
+        <div className="max-w-[1500px] mx-auto px-4">
+          <h1 className="mb-8 text-5xl font-extrabold text-center uppercase text-black">
+            New Arrivals
+          </h1>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
+            {newArrivals.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+          <div className="mt-8 text-center">
+            <Link to="/shop">
+              <Button className="gap-2 rounded-full border border-black text-black hover:bg-black hover:text-white transition">
+                View All <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Top Selling */}
-      <section className="py-10 px-4">
-        <div className="container mx-auto">
-          <div className="p-8 rounded-xl shadow-lg bg-gray-100 border border-gray-300">
-            <h1 className="mb-8 text-5xl font-extrabold text-center uppercase text-black">
-              Top Selling
-            </h1>
-
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
-              {topSelling.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-
-            <div className="mt-8 text-center">
-              <Link to="/shop">
-                <Button className="gap-2 rounded-full bg-black text-white hover:bg-gray-800">
-                  View All <ArrowRight className="w-4 h-4" />
-                </Button>
+      <section className="py-10 bg-white">
+        <div className="max-w-[1500px] mx-auto px-4">
+          <h1 className="mb-8 text-5xl font-extrabold text-center uppercase text-black">
+            Top Selling
+          </h1>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
+            {topSelling.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+          <div className="mt-8 text-center">
+            <Link to="/shop">
+              <Button className="gap-2 rounded-full border border-black text-black hover:bg-black hover:text-white transition">
+                View All <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+      
+      {/* Browse by Style */}
+      <section className="py-16">
+        <div className="container px-4 mx-auto">
+          <div className="p-8 bg-gray-100 rounded-lg">
+            <h2 className="mb-8 text-2xl font-bold">BROWSE BY dress STYLE</h2>
+            
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+              <Link to="/category/casual" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
+                <div className="flex flex-col items-center space-y-4">
+                  <img src="/assets/casual.png" alt="Casual style" className="object-cover w-full h-40 rounded-md" />
+                  <h3 className="text-lg font-medium">Casual</h3>
+                </div>
+              </Link>
+              
+              <Link to="/category/formal" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
+                <div className="flex flex-col items-center space-y-4">
+                  <img src="/assets/formal.png" alt="Formal style" className="object-cover w-full h-40 rounded-md" />
+                  <h3 className="text-lg font-medium">Formal</h3>
+                </div>
+              </Link>
+              
+              <Link to="/category/party" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
+                <div className="flex flex-col items-center space-y-4">
+                  <img src="/assets/party.png" alt="Party style" className="object-cover w-full h-40 rounded-md" />
+                  <h3 className="text-lg font-medium">Party</h3>
+                </div>
+              </Link>
+              
+              <Link to="/category/gym" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
+                <div className="flex flex-col items-center space-y-4">
+                  <img src="/assets/gym.png" alt="Gym style" className="object-cover w-full h-40 rounded-md" />
+                  <h3 className="text-lg font-medium">Gym</h3>
+                </div>
               </Link>
             </div>
           </div>

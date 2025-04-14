@@ -7,7 +7,10 @@
  * @returns {Object} Headers object with authorization token
  */
 export const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
+  // Check for admin token first, then regular user token
+  const adminToken = localStorage.getItem('adminToken');
+  const userToken = localStorage.getItem('token');
+  const token = adminToken || userToken;
   return {
     'Content-Type': 'application/json',
     'Authorization': token ? `Bearer ${token}` : '',

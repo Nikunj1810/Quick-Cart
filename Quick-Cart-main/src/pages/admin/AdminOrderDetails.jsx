@@ -14,214 +14,141 @@ const AdminOrderDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { data, isError } = useQuery({
-    queryKey: ['order', orderId],
-    queryFn: () => getOrderById(orderId),
-  });
-
   useEffect(() => {
-    if (data) {
-      // Transform API data to match frontend expectations
-      const transformedData = {
-        ...data,
-        id: data._id,
-        customer: {
-          name: data.shippingInfo?.fullName || 'Not available',
-          email: data.shippingInfo?.email || 'Not available',
-          phone: data.shippingInfo?.phone || 'Not available'
-        },
-        shippingAddress: `${data.shippingInfo?.address || ''}, ${data.shippingInfo?.city || ''}, ${data.shippingInfo?.state || ''} ${data.shippingInfo?.zipCode || ''}`,
-        shippingMethod: 'Standard Shipping',
-        paymentMethod: data.paymentMethod || 'Not specified',
-        createdAt: data.orderDate,
-        updatedAt: data.orderDate,
-        taxRate: 10,
-        taxAmount: data.orderTotal * 0.1,
-        subtotal: data.subtotal,
-        total: data.orderTotal,
-        shippingCost: data.deliveryFee,
-        discount: 0,
-        status: data.status || 'Pending',
-        items: data.items.map(item => ({
-          ...item,
-          product: {
-            _id: item.productId,
-            name: item.name || 'Product name not available',
-            imageUrl: item.imageUrl
+    const fetchData = async () => {
+      try {
+        const data = await getOrderById(orderId);
+        const transformedData = {
+          ...data,
+          id: data._id,
+          customer: {
+            name: data.shippingInfo?.fullName || "Not available",
+            email: data.shippingInfo?.email || "Not available",
+            phone: data.shippingInfo?.phone || "Not available",
           },
-          price: item.price,
-          quantity: item.quantity
-        }))
-      };
-      setOrder(transformedData);
-      setLoading(false);
-    }
-    if (isError) {
-      setError('Failed to fetch order details');
-      setLoading(false);
-    }
-  }, [data, isError]);
+          shippingAddress: `${data.shippingInfo?.address || ""}, ${data.shippingInfo?.city || ""}, ${data.shippingInfo?.state || ""} ${data.shippingInfo?.zipCode || ""}`,
+          paymentMethod: data.paymentMethod || "Not specified",
+          orderDate: data.orderDate,
+          status: data.status || "Pending",
+          subtotal: data.subtotal,
+          deliveryFee: data.deliveryFee,
+          total: data.orderTotal,
+          items: data.items,
+        };
+        setOrder(transformedData);
+        setLoading(false);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to fetch order details");
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [orderId]);
+
+  const printInvoice = () => {
+    const printContents = document.getElementById("invoice").innerHTML;
+    const originalContents = document.body.innerHTML;
+    document.body.innerHTML = printContents;
+    window.print();
+    document.body.innerHTML = originalContents;
+    window.location.reload(); // Optional: Reload to restore event bindings
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
-  if (!order) return <div>Order not found</div>;
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1">Order Details</h1>
-        <div className="text-sm text-gray-500">
-          <Link to="/admin/dashboard" className="hover:underline">Home</Link> &gt;{" "}
-          <Link to="/admin/orders" className="hover:underline">Order List</Link> &gt; Order Details
+    <div className="max-w-4xl mx-auto p-4">
+      <button
+        onClick={printInvoice}
+        className="mb-4 px-4 py-2 bg-black text-white rounded shadow-md"
+      >
+        Print Invoice
+      </button>
+
+      <div
+        id="invoice"
+        className="bg-white text-black p-8 shadow-md border rounded font-sans"
+      >
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold tracking-wide mb-1">QuickCart</h1>
+          <h2 className="text-xl mb-1">INVOICE</h2>
+          <p className="mb-0">Order #: <strong>{order.id}</strong></p>
+          <p>Date: <strong>{new Date(order.orderDate).toLocaleDateString()}</strong></p>
+          <hr className="my-4" />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <h3 className="text-gray-500 mb-2">Customer Information</h3>
+            <p><strong>Name:</strong> {order.customer.name}</p>
+            <p><strong>Email:</strong> {order.customer.email}</p>
+            <p><strong>Phone:</strong> {order.customer.phone}</p>
+          </div>
+          <div className="md:text-right">
+            <h3 className="text-gray-500 mb-2">Shipping Information</h3>
+            <p><strong>Address:</strong> {order.shippingAddress}</p>
+            <p><strong>Payment Method:</strong> {order.paymentMethod}</p>
+            <p><strong>Status:</strong> {order.status}</p>
+          </div>
+        </div>
+
+        <h3 className="mb-3 font-semibold">Ordered Products</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border border-gray-300 mb-6">
+            <thead className="bg-gray-100 text-center">
+              <tr>
+                <th className="p-2 border">#</th>
+                <th className="p-2 border">Product</th>
+                <th className="p-2 border">Size</th>
+                <th className="p-2 border">Price</th>
+                <th className="p-2 border">Qty</th>
+                <th className="p-2 border">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.items.map((item, index) => (
+                <tr key={index} className="text-center">
+                  <td className="p-2 border">{index + 1}</td>
+                  <td className="p-2 border">{item.name}</td>
+                  <td className="p-2 border">{item.size}</td>
+                  <td className="p-2 border">₹{item.price.toFixed(2)}</td>
+                  <td className="p-2 border">{item.quantity}</td>
+                  <td className="p-2 border">₹{(item.price * item.quantity).toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex justify-end">
+          <div className="w-full md:w-1/2">
+            <h3 className="mb-3 font-semibold">Order Summary</h3>
+            <table className="w-full text-sm">
+              <tbody>
+                <tr>
+                  <td className="py-1"><strong>Subtotal:</strong></td>
+                  <td className="py-1 text-right">₹{order.subtotal.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td className="py-1"><strong>Delivery Fee:</strong></td>
+                  <td className="py-1 text-right">₹{order.deliveryFee.toFixed(2)}</td>
+                </tr>
+                <tr className="border-t mt-2">
+                  <td className="py-2 font-bold text-lg"><strong>Total:</strong></td>
+                  <td className="py-2 text-right font-bold text-lg">₹{order.total.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="text-center mt-8 text-gray-600">
+          <p>Thank you for shopping with <strong>QuickCart</strong>!</p>
         </div>
       </div>
 
-      <Card className="mb-6">
-        <div className="p-6 flex justify-between items-center border-b">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold">Order ID: #{order.id}</h2>
-            <span className={`${order.status === 'Pending' ? 'bg-amber-100 text-amber-800' : order.status === 'Delivered' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} text-xs px-2 py-1 rounded`}>{order.status}</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M20 3H19V1H17V3H7V1H5V3H4C2.9 3 2 3.9 2 5V21C2 22.1 2.9 23 4 23H20C21.1 23 22 22.1 22 21V5C22 3.9 21.1 3 20 3ZM20 21H4V10H20V21ZM20 8H4V5H20V8Z" fill="currentColor"/>
-              </svg>
-              <span className="ml-2 text-sm">{new Date(order.createdAt).toLocaleDateString()} - {new Date(order.updatedAt).toLocaleDateString()}</span>
-            </div>
-            <Button variant="outline" className="bg-white" onClick={() => window.print()}>
-              Print Bill
-              <svg width="16" height="16" className="ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 8H5C3.34 8 2 9.34 2 11v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z" fill="currentColor"/>
-              </svg>
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
-          <div className="flex">
-            <div className="mr-4">
-              <div className="w-10 h-10 bg-gray-900 rounded-md flex items-center justify-center">
-                <User className="h-5 w-5 text-white" />
-              </div>
-            </div>
-            <div>
-              <h3 className="font-medium mb-1">Customer</h3>
-              <p className="text-sm">Full Name: {order.customer?.name || 'Not available'}</p>
-              <p className="text-sm">Email: {order.customer?.email || 'Not available'}</p>
-              <p className="text-sm">Phone: {order.customer?.phone || 'Not available'}</p>
-              <Button variant="outline" size="sm" className="mt-3">View profile</Button>
-            </div>
-          </div>
-
-          <div className="flex">
-            <div className="mr-4">
-              <div className="w-10 h-10 bg-gray-900 rounded-md flex items-center justify-center">
-                <Package className="h-5 w-5 text-white" />
-              </div>
-            </div>
-            <div>
-              <h3 className="font-medium mb-1">Order Info</h3>
-              <p className="text-sm">Shipping: {order.shippingMethod}</p>
-              <p className="text-sm">Payment Method: {order.paymentMethod}</p>
-              <p className="text-sm">Status: {order.status}</p>
-              <Button variant="outline" size="sm" className="mt-3">Download info</Button>
-            </div>
-          </div>
-
-          <div className="flex">
-            <div className="mr-4">
-              <div className="w-10 h-10 bg-gray-900 rounded-md flex items-center justify-center">
-                <Package className="h-5 w-5 text-white" />
-              </div>
-            </div>
-            <div>
-              <h3 className="font-medium mb-1">Deliver to</h3>
-              <p className="text-sm">Address: {order.shippingAddress}</p>
-              <Button variant="outline" size="sm" className="mt-3">View profile</Button>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      <Card>
-        <div className="p-6 flex justify-between items-center border-b">
-          <h2 className="text-xl font-bold">Products</h2>
-          <button>
-            <MoreVertical className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox />
-                </TableHead>
-                <TableHead>Product Name</TableHead>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Quantity</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {order.items.map((item) => (
-                <TableRow key={item._id}>
-                  <TableCell>
-                    <Checkbox />
-                  </TableCell>
-                  <TableCell className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-200 rounded-md overflow-hidden">
-                      {item.product?.imageUrl ? (
-                        <img 
-                          src={`http://localhost:5000${item.product.imageUrl}`} 
-                          alt={item.product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                          <Package className="h-4 w-4 text-gray-500" />
-                        </div>
-                      )}
-                    </div>
-                    <span>{item.product?.name || 'Product name not available'}</span>
-                  </TableCell>
-                  <TableCell>#{item.product?._id || 'N/A'}</TableCell>
-                  <TableCell>{item.quantity}</TableCell>
-                  <TableCell className="text-right">₹{item.price * item.quantity}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-
-        <div className="border-t p-6">
-          <div className="flex justify-end">
-            <div className="w-72">
-              <div className="flex justify-between py-2">
-                <span>Subtotal</span>
-                <span>₹{order.subtotal}</span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span>Tax ({order.taxRate}%)</span>
-                <span>₹{order.taxAmount}</span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span>Discount</span>
-                <span>₹{order.discount || 0}</span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span>Shipping Rate</span>
-                <span>₹{order.shippingCost || 0}</span>
-              </div>
-              <div className="flex justify-between py-3 font-bold text-lg border-t mt-2">
-                <span>Total</span>
-                <span>₹{order.total}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
     </div>
   );
 };

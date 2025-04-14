@@ -48,7 +48,8 @@ const AdminLogin = () => {
       if (response.ok) {
         localStorage.setItem("admin", JSON.stringify(data.admin));
         localStorage.setItem("adminToken", data.token);
-        await login(email, password);
+        await login(email, password, true); // Set remember=true to persist admin session
+
 
         toast.success("Login successful", {
           description: "Welcome to QuickCart Admin Dashboard!",
@@ -61,7 +62,7 @@ const AdminLogin = () => {
           description: data.error || "Invalid email or password",
         });
       }
-    } catch (error) {
+    } catch {
       toast.error("Login failed", {
         description: "Something went wrong. Please try again.",
       });

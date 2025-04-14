@@ -1,254 +1,227 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FileInput } from "@/components/ui/file-input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 const productSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  description: z.string().optional(),
+  description: z.string().min(1, "Description is required"),
+  brand: z.string().min(2, "Brand is required"),
   category: z.string().min(1, "Category is required"),
-  brand: z.string().optional(),
-  sku: z.string().optional(),
-  stock: z.coerce.number().min(0, "Stock cannot be negative").optional(),
-  price: z.coerce.number().min(0, "Price cannot be negative"),
-  originalPrice: z.coerce.number().min(0, "Original price cannot be negative").optional(),
-  tags: z.string().optional(),
+  stockQuantity: z.coerce.number().min(0).optional(),
+  price: z.coerce.number().min(1),
+  originalPrice: z.coerce.number().min(0).optional(),
+  sku: z.string().min(2),
+  discountPercentage: z.coerce.number().min(0).max(100).optional(),
+  imageUrl: z.string().optional(),
+  sizeType: z.enum(["standard", "waist"]),
+  sizes: z
+    .array(
+      z.object({
+        size: z.string().min(1, "Size is required"),
+        quantity: z.coerce.number().min(0, "Quantity must be 0 or more"),
+      })
+    )
+    .min(1, "At least one size is required"),
+  isNewArrival: z.boolean().optional(),
 });
 
-const ProductForm = ({ product, onSubmit, onDelete, categories, isNew = false }) => {
+const AddProductForm = ({ product = null, onSubmit = () => {} }) => {
+  const [categories, setCategories] = useState([]);
   const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(product?.imageUrl || null);
   const { toast } = useToast();
 
-  const form = useForm({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm({
     resolver: zodResolver(productSchema),
-    defaultValues: {
-      name: product?.name || "",
-      description: product?.description || "",
-      category: product?.category || "",
-      brand: product?.brand || "",
-      sku: product?.sku || "",
-      stock: product?.stock || 0,
-      price: product?.price || 0,
-      originalPrice: product?.originalPrice || 0,
-      tags: product?.tags?.join(", ") || "",
+    defaultValues: product || {
+      sizeType: "standard",
+      isNewArrival: false,
+      sizes: [{ size: "", quantity: 0 }],
     },
   });
 
-  const handleImageUpload = (file) => {
-    const url = URL.createObjectURL(file);
-    setImage({ url, file, id: Date.now().toString() });
+  const sizes = watch("sizes", []);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/categories")
+      .then((res) => setCategories(res.data))
+      .catch(() =>
+        toast({
+          title: "Error",
+          description: "Failed to load categories",
+          variant: "destructive",
+          className: "bg-white border-red-500 text-red-500",
+        })
+      );
+  }, []);
+
+  const addSize = () => {
+    setValue("sizes", [...sizes, { size: "", quantity: 0 }]);
+  };
+
+  const updateSize = (index, field, value) => {
+    const updatedSizes = [...sizes];
+    updatedSizes[index][field] = field === "quantity" ? parseInt(value) || 0 : value;
+    setValue("sizes", updatedSizes);
+  };
+
+  const removeSize = (index) => {
+    setValue("sizes", sizes.filter((_, i) => i !== index));
+  };
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png", "image/gif"].includes(file.type)) {
+      toast({ title: "Error", description: "Invalid file type", variant: "destructive" });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Error", description: "Image exceeds 5MB", variant: "destructive" });
+      return;
+    }
+
+    setImage(file);
+    setImagePreview(URL.createObjectURL(file));
   };
 
   const onFormSubmit = async (data) => {
     try {
-      await onSubmit(data, image?.file);
-      toast({
-        title: isNew ? "Product created" : "Product updated",
-        description: isNew ? "Your product has been created successfully" : "Your product has been updated successfully",
+      if (!image && !data.imageUrl && !product) {
+        toast({ title: "Error", description: "Product image is required for new products", variant: "destructive" });
+        return;
+      }
+
+      const productData = {
+        ...data,
+        sizes,
+        price: parseFloat(data.price),
+        originalPrice: parseFloat(data.originalPrice) || 0,
+        stockQuantity: parseInt(data.stockQuantity) || 0,
+        discountPercentage: parseFloat(data.discountPercentage) || 0,
+      };
+
+      const formData = new FormData();
+      if (image) {
+        formData.append("image", image);
+      }
+      formData.append("product", JSON.stringify(productData));
+
+      const apiUrl = product
+        ? `http://localhost:5000/api/products/${product._id}`
+        : "http://localhost:5000/api/products";
+      const method = product ? "PUT" : "POST";
+
+      const response = await fetch(apiUrl, {
+        method,
+        body: formData
       });
-    } catch (error) {
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save product');
+      }
+
+      const result = await response.json();
+      toast({
+        title: "Success",
+        description: result.message || "Product saved successfully!",
+        className: "bg-white border-green-500 text-green-500",
+      });
+
+      reset();
+      setValue("sizes", [{ size: "", quantity: 0 }]);
+      setImage(null);
+      setImagePreview(null);
+      onSubmit();
+    } catch (err) {
       toast({
         title: "Error",
-        description: "There was an error processing your request",
+        description: err.response?.data?.error || "Something went wrong",
         variant: "destructive",
-      });
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!onDelete) return;
-
-    try {
-      await onDelete();
-      toast({
-        title: "Product deleted",
-        description: "Your product has been deleted successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "There was an error deleting the product",
-        variant: "destructive",
+        className: "bg-white border-red-500 text-red-500",
       });
     }
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Product Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Type name here" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+      <Input placeholder="Product Name" {...register("name")} />
+      {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Type description here" rows={5} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <Textarea placeholder="Description" {...register("description")} />
+      {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
 
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.name}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <Input placeholder="Brand" {...register("brand")} />
+      {errors.brand && <p className="text-red-500 text-sm">{errors.brand.message}</p>}
 
-            <FormField
-              control={form.control}
-              name="brand"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Brand Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Type brand name here" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <select {...register("category")} className="w-full p-2 border rounded-md">
+        <option value="">Select Category</option>
+        {categories.map((category) => (
+          <option key={category._id} value={category._id}>
+            {category.name}
+          </option>
+        ))}
+      </select>
+      {errors.category && <p className="text-red-500 text-sm">{errors.category.message}</p>}
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="sku"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>SKU</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. PROD-123" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      <Input placeholder="SKU" {...register("sku")} />
+      {errors.sku && <p className="text-red-500 text-sm">{errors.sku.message}</p>}
+      <Input type="number" placeholder="Stock Quantity" {...register("stockQuantity")} />
+      <Input type="number" placeholder="Price" {...register("price")} />
+      <Input type="number" placeholder="Original Price" {...register("originalPrice")} />
+      <Input type="number" placeholder="Discount %" {...register("discountPercentage")} />
 
-              <FormField
-                control={form.control}
-                name="stock"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Stock Quantity</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="0" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+      <label className="block font-medium">Size Type</label>
+      <select {...register("sizeType")} className="w-full p-2 border rounded-md">
+        <option value="standard">Standard</option>
+        <option value="waist">Waist</option>
+      </select>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Price</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="0" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="originalPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Original Price</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="0" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="tags"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tags (comma separated)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="tag1, tag2, tag3" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="space-y-6">
-            <FileInput
-              label="Product Image"
-              buttonText="Upload Image"
-              preview={image?.url || product?.imageUrl}
-              onFileSelected={handleImageUpload}
-            />
-          </div>
+      <label className="block font-medium mt-4">Sizes</label>
+      {sizes.map((entry, i) => (
+        <div key={i} className="flex items-center gap-2 mb-2">
+          <Input
+            {...register(`sizes.${i}.size`, { required: "Size is required" })}
+            value={entry.size}
+            onChange={(e) => updateSize(i, "size", e.target.value)}
+          />
+          <Input
+            type="number"
+            {...register(`sizes.${i}.quantity`, { required: "Quantity is required" })}
+            value={entry.quantity}
+            onChange={(e) => updateSize(i, "quantity", e.target.value)}
+          />
+          <Button type="button" onClick={() => removeSize(i)}>Remove</Button>
         </div>
+      ))}
+      <Button type="button" onClick={addSize}>Add Size</Button>
 
-        <div className="flex justify-end gap-3 mt-8">
-          {!isNew && onDelete && (
-            <Button type="button" variant="destructive" onClick={handleDelete}>
-              DELETE
-            </Button>
-          )}
-          <Button type="button" variant="outline">CANCEL</Button>
-          <Button type="submit">{isNew ? 'SAVE PRODUCT' : 'UPDATE'}</Button>
-        </div>
-      </form>
-    </Form>
+      <input type="checkbox" {...register("isNewArrival")} />
+      <label>New Arrival</label>
+
+      <Input type="file" onChange={handleImageUpload} accept="image/jpeg,image/png,image/gif" />
+      {imagePreview && <img src={imagePreview} alt="Preview" className="w-32 h-32 mt-2 rounded-md" />}
+
+      <Button type="submit">Save Product</Button>
+    </form>
   );
 };
 
-export default ProductForm;
+export default AddProductForm;

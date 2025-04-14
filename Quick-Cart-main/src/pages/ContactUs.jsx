@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { toast } from "sonner";
 import { Mail, MapPin, Phone } from "lucide-react";
+import axios from "axios";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -44,9 +45,14 @@ const ContactUs = () => {
   });
 
   function onSubmit(values) {
-    console.log(values);
-    toast.success("Your message has been sent! We'll get back to you soon.");
-    form.reset();
+    axios.post("http://localhost:5000/api/contact", values)
+      .then(() => {
+        toast.success("Your message has been sent! We'll get back to you soon.");
+        form.reset();
+      })
+      .catch((error) => {
+        toast.error("Failed to send message: " + error.response.data.error);
+      });
   }
 
   return (

@@ -11,7 +11,6 @@ export const getAuthHeaders = () => {
   const adminToken = localStorage.getItem('adminToken');
   const userToken = localStorage.getItem('token');
   const token = adminToken || userToken;
-  
   return {
     'Content-Type': 'application/json',
     'Authorization': token ? `Bearer ${token}` : '',

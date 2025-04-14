@@ -1,3 +1,4 @@
+
   import React, { useState, useEffect } from "react";
   import { Link, useNavigate } from "react-router-dom";
   import MainLayout from "@/components/layout/MainLayout";
@@ -165,6 +166,7 @@
         toast({
           title: "Error",
           description: error.message || "Failed to place your order. Please try again.",
+
           variant: "destructive",
         });
       } finally {
@@ -416,3 +418,4 @@
   };
 
   export default Checkout;
+

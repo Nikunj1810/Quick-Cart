@@ -1,14 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
 import { LogOut, User } from "lucide-react";
+import { useUser } from "@/context/UserContext";
+import { toast as sonnerToast } from "sonner"; // ✅ Sonner toast
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const user = JSON.parse(localStorage.getItem("user"));
+  const { user, logout: userLogout } = useUser();
+  const [isLoading] = useState(false);
 
   // Redirect if not logged in
   if (!user) {
@@ -16,16 +17,33 @@ const Profile = () => {
     return null;
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-      variant: "default",
-      className: "bg-white border-red-500 text-red-500",
-    });
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      userLogout();
+
+      sonnerToast.success("You have been successfully logged out.", {
+        description: "Goodbye!",
+        style: {
+          backgroundColor: "white", 
+          color: "black",
+          borderRadius: "0.5rem",
+          fontWeight: "bold",
+        },
+      });
+
+      navigate("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+
+      sonnerToast.error("An error occurred while logging out.", {
+        style: {
+          backgroundColor: "#ef4444", // red
+          color: "white",
+          borderRadius: "0.5rem",
+          fontWeight: "bold",
+        },
+      });
+    }
   };
 
   return (
@@ -79,11 +97,11 @@ const Profile = () => {
             variant="default"
             className="w-full mt-8 bg-black hover:bg-gray-800 text-white py-3 rounded-lg flex items-center justify-center transition-all duration-300"
             onClick={handleLogout}
+            disabled={isLoading}
           >
-            Logout
-            <LogOut className="ml-2 h-5 w-5" />
+            {isLoading ? "Logging out..." : "Logout"}
+            {!isLoading && <LogOut className="ml-2 h-5 w-5" />}
           </Button>
-
         </div>
       </div>
     </MainLayout>

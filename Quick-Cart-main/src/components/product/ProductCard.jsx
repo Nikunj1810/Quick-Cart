@@ -1,22 +1,35 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { formatIndianRupee } from "@/utils/currency";
 
 const ProductCard = ({ product }) => {
   return (
-    <Link to={`/product/${product.id}`} className="group">
-      <div className="overflow-hidden rounded-md mb-3 bg-gray-100">
-        <img
-          src={product.imageUrl}
-          alt={product.name}
-          className="h-60 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-        />
-      </div>
-      <h3 className="font-medium text-lg">{product.name}</h3>
-      <div className="flex items-center gap-2">
-        <p className="font-medium">₹ {product.price}</p>
-        {product.originalPrice && (
-          <p className="text-gray-500 line-through text-sm">₹ {product.originalPrice}</p>
-        )}
+    <Link to={`/product/${product._id}`} className="group block">
+      <div className="overflow-hidden rounded-xl bg-white shadow-lg border border-gray-200 transition-all duration-300 group-hover:shadow-2xl">
+        
+        {/* Product Image */}
+        <div className="relative w-full aspect-[3/4] overflow-hidden rounded-t-xl">
+          <img
+            src={product.imageUrl.startsWith("http") ? product.imageUrl : `http://localhost:5000${product.imageUrl}`}
+            alt={product.name}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        </div>
+
+        {/* Product Details */}
+        <div className="p-4">
+          {/* Name Truncation */}
+          <h3 className="text-lg font-semibold text-gray-900 truncate w-full transition-colors duration-300 group-hover:text-black">
+            {product.name}
+          </h3>
+
+          <div className="flex items-center gap-2 mt-2">
+            <p className="text-lg font-bold text-black">{formatIndianRupee(product.price)}</p>
+            {product.originalPrice && (
+              <p className="text-sm text-gray-500 line-through">{formatIndianRupee(product.originalPrice)}</p>
+            )}
+          </div>
+        </div>
       </div>
     </Link>
   );

@@ -18,12 +18,13 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 const Header = () => {
   const navigate = useNavigate();
   const { cartCount } = useCart();
-  const { isAuthenticated } = useUser();
+  const { isAuthenticated, user } = useUser(); // Now includes user
   const { isAuthenticated: isAdminAuthenticated } = useAdmin();
   const [showPromo, setShowPromo] = useState(true);
   const [showSearch, setShowSearch] = useState(false);
 
   const handleAdminDashboard = () => navigate("/admin/dashboard");
+
 
   return (
     <header className="sticky top-0 z-20 bg-white shadow-sm">
@@ -156,15 +157,15 @@ const Header = () => {
               )}
             </Link>
 
-            {/* Login Button */}
+            {/* Login/Profile Button */}
             {!isAuthenticated ? (
               <Link to="/login">
                 <Button
                   variant="outline"
                   className="px-6 py-2 bg-black text-white border-2 border-black
-                    rounded-3xl font-medium transition-all duration-300 
-                    hover:bg-white hover:text-black
-                    active:scale-95"
+        rounded-3xl font-medium transition-all duration-300 
+        hover:bg-white hover:text-black
+        active:scale-95"
                 >
                   Login
                 </Button>
@@ -175,7 +176,7 @@ const Header = () => {
                   variant="ghost"
                   size="icon"
                   className="p-2 rounded-full border-2 border-black transition-all duration-300 
-                    hover:bg-black hover:text-white"
+        hover:bg-black hover:text-white"
                 >
                   <User className="h-6 w-6" />
                 </Button>
@@ -202,8 +203,11 @@ const Header = () => {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 h-full fixed top-0 left-0 z-50 bg-white">
-              <div className="flex flex-col gap-6 mt-8">
+              <SheetContent
+                side="left"
+                className="w-64 h-full fixed top-0 left-0 z-50 bg-white"
+              >
+                <div className="flex flex-col gap-6 mt-8">
                   <Link
                     to="/shop"
                     className="text-lg font-medium"

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/context/UserContext";
+import { ShoppingBag, Check } from "lucide-react";
 
 const LoginForm = () => {
   const { login } = useUser();
@@ -8,39 +9,30 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [credentials, setCredentials] = useState({ email: "", password: "" });
 
+  // Removed bufferState and progress states
+  // Removed useEffect for progress animation
+  // Removed useEffect for resetting progress
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const success = await login(credentials);
-      if (success) {
-        // Show buffer screen for 3 seconds
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+      const result = await login(credentials);
+      if (result.success) {
         navigate("/");
+      } else {
+        console.error("Login failed:", result.error);
+        setIsLoading(false);
       }
     } catch (error) {
       console.error("Login failed:", error);
-    } finally {
       setIsLoading(false);
     }
   };
 
   return (
     <>
-      {/* 🔹 Loading Screen */}
-      {isLoading && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-md transition-opacity duration-500 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
-            {/* 🔹 Animated Spinner */}
-            <div className="w-14 h-14 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
-            <p className="mt-4 text-lg font-semibold text-gray-700 animate-pulse">
-              Logging in...
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* 🔹 Login Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <input

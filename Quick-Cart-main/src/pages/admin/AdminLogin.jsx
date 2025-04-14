@@ -3,18 +3,16 @@ import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
-import { Checkbox } from "../../components/ui/checkbox";
 import { useAdmin } from "../../context/AdminContext";
+import { toast } from "sonner";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAdmin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already authenticated
   if (isAuthenticated) {
     navigate("/admin/dashboard");
   }
@@ -22,6 +20,19 @@ const AdminLogin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+
+    if (!email.trim() || !password.trim()) {
+      toast.error("Please fill in all fields");
+      setIsLoading(false);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address");
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch("http://localhost:5000/api/admin/login", {
@@ -37,55 +48,55 @@ const AdminLogin = () => {
       if (response.ok) {
         localStorage.setItem("admin", JSON.stringify(data.admin));
         localStorage.setItem("adminToken", data.token);
-<<<<<<< Updated upstream
-        await login(email, password, rememberMe);
-=======
         await login(email, password, true); // Set remember=true to persist admin session
+
 
         toast.success("Login successful", {
           description: "Welcome to QuickCart Admin Dashboard!",
         });
 
         await new Promise((resolve) => setTimeout(resolve, 2000));
->>>>>>> Stashed changes
         navigate("/admin/dashboard");
       } else {
-        console.error("Login error:", data.error);
+        toast.error("Login failed", {
+          description: data.error || "Invalid email or password",
+        });
       }
-<<<<<<< Updated upstream
-    } catch (error) {
-      console.error("Login error:", error);
-=======
     } catch {
       toast.error("Login failed", {
         description: "Something went wrong. Please try again.",
       });
->>>>>>> Stashed changes
     } finally {
       setIsLoading(false);
     }
-  };
+  }; // 🔧 this was missing
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50">
-      <div className="mb-10">
-        <div className="flex justify-center mb-4">
-          <h1 className="text-3xl font-bold tracking-tighter">QuickCart</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex flex-col items-center justify-center px-4">
+      {/* Loader Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="p-6 bg-white rounded-xl shadow-2xl flex flex-col items-center animate-fade-in">
+            <div className="w-14 h-14 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
+            <p className="mt-4 text-lg font-medium text-gray-800">Logging in...</p>
+          </div>
         </div>
-        <p className="text-sm text-center uppercase tracking-widest text-gray-500">STORE</p>
+      )}
+
+      <div className="mb-8 text-center">
+        <h1 className="text-4xl font-bold tracking-tight text-gray-900">QuickCart</h1>
+        <p className="text-sm uppercase tracking-widest text-gray-500 mt-1">Admin Panel</p>
       </div>
 
-      <div className="w-full max-w-md px-8 py-10 bg-white rounded-lg shadow-md">
-        <h2 className="text-3xl font-bold mb-2">Login</h2>
-        <p className="text-blue-600 hover:underline mb-6 cursor-pointer">
-          Forgot your password?
-        </p>
+      <div className="w-full max-w-md bg-white shadow-xl rounded-2xl p-8 space-y-6">
+        <h2 className="text-2xl font-semibold text-gray-800">Sign in to your account</h2>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <Input
               type="email"
-              placeholder="Email"
+              placeholder="you@example.com"
               className="w-full"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -94,9 +105,10 @@ const AdminLogin = () => {
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
             <Input
               type="password"
-              placeholder="Password"
+              placeholder="••••••••"
               className="w-full"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -104,26 +116,21 @@ const AdminLogin = () => {
             />
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="remember-me"
-              checked={rememberMe}
-              onCheckedChange={(checked) => setRememberMe(checked === true)}
-            />
-            <label
-              htmlFor="remember-me"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          <div className="text-right">
+            <button
+              type="button"
+              className="text-sm text-blue-600 hover:underline"
             >
-              Keep me logged in
-            </label>
+              Forgot your password?
+            </button>
           </div>
 
           <Button
             type="submit"
-            className="w-full bg-blue-900 hover:bg-blue-800 text-white py-2 flex items-center justify-center"
+            className="w-full bg-black hover:bg-gray-900 text-white font-semibold py-2 rounded flex items-center justify-center transition duration-200"
             disabled={isLoading}
           >
-            EMAIL LOGIN
+            LOGIN
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </form>

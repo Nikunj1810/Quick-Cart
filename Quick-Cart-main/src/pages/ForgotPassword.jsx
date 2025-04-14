@@ -12,10 +12,41 @@ const ForgotPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setMessage("");
+    
+    // Basic validation
+    if (!email.trim()) {
+      setMessage("Please enter your email address");
+      setIsLoading(false);
+      return;
+    }
+    
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setMessage("Please enter a valid email address");
+      setIsLoading(false);
+      return;
+    }
+    
     try {
-      // Add your password reset logic here
-      setMessage("Password reset link has been sent to your email");
+      const response = await fetch("http://localhost:5000/api/forgot-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setMessage("Password reset link has been sent to your email");
+      } else {
+        setMessage(data.error || "Error sending reset link. Please try again.");
+      }
     } catch (error) {
+      console.error("Password reset error:", error);
       setMessage("Error sending reset link. Please try again.");
     } finally {
       setIsLoading(false);

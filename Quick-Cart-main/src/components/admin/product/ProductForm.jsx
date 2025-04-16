@@ -150,8 +150,12 @@ const AddProductForm = ({ product = null, onSubmit = () => {}, categories = [] }
 
   const onFormSubmit = async (data) => {
     try {
-      if (selectedFiles.length === 0 && !data.imageUrl && !product) {
-        toast({ title: "Error", description: "At least one product image is required", variant: "destructive" });
+      if (selectedFiles.length === 0 && !data.imageUrl && !product?.imageUrl) {
+        toast({
+          title: "Error",
+          description: "At least one product image is required",
+          variant: "destructive"
+        });
         return;
       }
 

@@ -13,10 +13,10 @@ const Home = () => {
   useEffect(() => {
     const fetchNewArrivals = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/products");
+        const response = await fetch("http://localhost:5000/api/products?isNewArrival=true&limit=10");
         if (!response.ok) throw new Error("Failed to fetch new arrivals");
         const data = await response.json();
-        setNewArrivals(data.products.slice(0, 2));
+        setNewArrivals(data.products);
       } catch (error) {
         console.error("Error fetching new arrivals:", error);
       }
@@ -31,12 +31,12 @@ const Home = () => {
     const fetchTopSelling = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/products?topSelling=true"
+          "http://localhost:5000/api/products?topSelling=true&limit=10"
         );
         if (!response.ok)
           throw new Error("Failed to fetch top selling products");
         const data = await response.json();
-        setTopSelling(data.products.slice(0, 4));
+        setTopSelling(data.products);
       } catch (error) {
         console.error("Error fetching top selling products:", error);
       }
@@ -146,10 +146,16 @@ const Home = () => {
           <h1 className="mb-8 text-5xl font-extrabold text-center uppercase text-black">
             New Arrivals
           </h1>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
-            {newArrivals.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+          <div className="relative">
+            <div className="overflow-x-auto scrollbar-hide" style={{ scrollBehavior: 'smooth' }}>
+              <div className="flex gap-6 pb-4" style={{ minWidth: 'min-content' }}>
+                {newArrivals.map((product) => (
+                  <div key={product.id} className="w-[280px] flex-shrink-0">
+                    <ProductCard product={product} />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="mt-8 text-center">
             <Link to="/shop">
@@ -167,10 +173,16 @@ const Home = () => {
           <h1 className="mb-8 text-5xl font-extrabold text-center uppercase text-black">
             Top Selling
           </h1>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
-            {topSelling.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+          <div className="relative">
+            <div className="overflow-x-auto scrollbar-hide" style={{ scrollBehavior: 'smooth' }}>
+              <div className="flex gap-6 pb-4" style={{ minWidth: 'min-content' }}>
+                {topSelling.map((product) => (
+                  <div key={product.id} className="w-[280px] flex-shrink-0">
+                    <ProductCard product={product} />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="mt-8 text-center">
             <Link to="/shop">

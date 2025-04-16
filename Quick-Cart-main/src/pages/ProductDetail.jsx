@@ -16,6 +16,7 @@ import {
 import { useCart } from "@/context/CartContext";
 import { useAdmin } from "@/context/AdminContext";
 import { toast } from "sonner";
+import ProductCard from "@/components/product/ProductCard";
 
 const ProductDetail = () => {
   const { productId } = useParams();
@@ -28,6 +29,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [similarProducts, setSimilarProducts] = useState([]);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -50,6 +52,25 @@ const ProductDetail = () => {
 
     fetchProduct();
   }, [productId]);
+
+  useEffect(() => {
+    const fetchSimilarProducts = async () => {
+      if (!product?.category) return;
+      
+      try {
+        const response = await fetch(`http://localhost:5000/api/products?category=${product.category}&limit=10`);
+        if (!response.ok) throw new Error('Failed to fetch similar products');
+        
+        const data = await response.json();
+        const filteredProducts = data.products.filter(p => p._id !== product._id);
+        setSimilarProducts(filteredProducts);
+      } catch (error) {
+        console.error('Error fetching similar products:', error);
+      }
+    };
+
+    fetchSimilarProducts();
+  }, [product]);
 
   const handleAddToCart = async () => {
     if (!isLoggedIn()) {
@@ -254,6 +275,22 @@ const ProductDetail = () => {
             )}
           </div>
         </div>
+
+        {/* Similar Products Section */}
+        {similarProducts.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-2xl font-bold mb-6">Similar Products</h2>
+            <div className="relative overflow-x-auto pb-4">
+              <div className="flex gap-6 overflow-x-auto scrollbar-hide" style={{ scrollBehavior: 'smooth' }}>
+                {similarProducts.map((similarProduct) => (
+                  <div key={similarProduct._id} className="flex-none w-[280px]">
+                    <ProductCard product={similarProduct} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Login Dialog */}

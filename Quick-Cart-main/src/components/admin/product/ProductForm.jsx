@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { X } from "lucide-react";
 
 const productSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -20,6 +20,7 @@ const productSchema = z.object({
   gender: z.enum(["Men", "Women", "Unisex"], { required_error: "Gender is required" }),
   discountPercentage: z.coerce.number().min(0).max(100).optional(),
   imageUrl: z.string().optional(),
+  images: z.array(z.string()).optional(),
   sizeType: z.enum(["standard", "waist"]),
   sizes: z
     .array(
@@ -32,10 +33,28 @@ const productSchema = z.object({
   isNewArrival: z.boolean().optional(),
 });
 
-const AddProductForm = ({ product = null, onSubmit = () => {} }) => {
-  const [categories, setCategories] = useState([]);
-  const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(product?.imageUrl || null);
+const AddProductForm = ({ product = null, onSubmit = () => {}, categories = [] }) => {
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+
+  useEffect(() => {
+    // Initialize image previews from product data
+    if (product) {
+      const previews = [];
+      if (product.images && product.images.length > 0) {
+        previews.push(...product.images.map(img => 
+          img.startsWith('http') ? img : `http://localhost:5000${img}`
+        ));
+      } else if (product.imageUrl) {
+        previews.push(
+          product.imageUrl.startsWith('http') 
+            ? product.imageUrl 
+            : `http://localhost:5000${product.imageUrl}`
+        );
+      }
+      setImagePreviews(previews);
+    }
+  }, [product]);
   const { toast } = useToast();
 
   const {
@@ -56,19 +75,7 @@ const AddProductForm = ({ product = null, onSubmit = () => {} }) => {
 
   const sizes = watch("sizes", []);
 
-  useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/categories")
-      .then((res) => setCategories(res.data))
-      .catch(() =>
-        toast({
-          title: "Error",
-          description: "Failed to load categories",
-          variant: "destructive",
-          className: "bg-white border-red-500 text-red-500",
-        })
-      );
-  }, []);
+
 
   const addSize = () => {
     setValue("sizes", [...sizes, { size: "", quantity: 0 }]);
@@ -85,27 +92,66 @@ const AddProductForm = ({ product = null, onSubmit = () => {} }) => {
   };
 
   const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+    const files = Array.from(event.target.files);
+    const invalidFiles = files.filter(
+      file => !['image/jpeg', 'image/png', 'image/gif'].includes(file.type)
+    );
 
-    if (!["image/jpeg", "image/png", "image/gif"].includes(file.type)) {
-      toast({ title: "Error", description: "Invalid file type", variant: "destructive" });
+    if (invalidFiles.length > 0) {
+      toast({
+        title: "Error",
+        description: "Some files have invalid types. Only JPEG, PNG, and GIF are allowed.",
+        variant: "destructive"
+      });
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "Error", description: "Image exceeds 5MB", variant: "destructive" });
+    const largeFiles = files.filter(file => file.size > 5 * 1024 * 1024);
+    if (largeFiles.length > 0) {
+      toast({
+        title: "Error",
+        description: "Some images exceed 5MB size limit",
+        variant: "destructive"
+      });
       return;
     }
 
-    setImage(file);
-    setImagePreview(URL.createObjectURL(file));
+    // Create preview URLs for the new files
+    const validFiles = files.filter(file => 
+      ['image/jpeg', 'image/png', 'image/gif'].includes(file.type) && 
+      file.size <= 5 * 1024 * 1024
+    );
+
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+    
+    const newPreviews = validFiles.map(file => URL.createObjectURL(file));
+    setImagePreviews(prev => [...prev, ...newPreviews]);
   };
+
+  const removeImage = (index) => {
+    // Revoke the object URL to prevent memory leaks
+    if (selectedFiles[index]) {
+      URL.revokeObjectURL(imagePreviews[index]);
+    }
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Cleanup object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach(preview => {
+        if (preview.startsWith('blob:')) {
+          URL.revokeObjectURL(preview);
+        }
+      });
+    };
+  }, []);
 
   const onFormSubmit = async (data) => {
     try {
-      if (!image && !data.imageUrl && !product) {
-        toast({ title: "Error", description: "Product image is required for new products", variant: "destructive" });
+      if (selectedFiles.length === 0 && !data.imageUrl && !product) {
+        toast({ title: "Error", description: "At least one product image is required", variant: "destructive" });
         return;
       }
 
@@ -119,15 +165,15 @@ const AddProductForm = ({ product = null, onSubmit = () => {} }) => {
       };
 
       const formData = new FormData();
-      if (image) {
-        formData.append("image", image);
-      }
+      selectedFiles.forEach((file) => {
+        formData.append('images', file);
+      });
       
       // Format data differently for create vs update
       if (product) {
-        formData.append("updates", JSON.stringify(productData));
+        formData.append('updates', JSON.stringify(productData));
       } else {
-        formData.append("product", JSON.stringify(productData));
+        formData.append('product', JSON.stringify(productData));
       }
 
       const apiUrl = product
@@ -154,8 +200,8 @@ const AddProductForm = ({ product = null, onSubmit = () => {} }) => {
 
       reset();
       setValue("sizes", [{ size: "", quantity: 0 }]);
-      setImage(null);
-      setImagePreview(null);
+      setSelectedFiles([]);
+      setImagePreviews([]);
       onSubmit();
     } catch (err) {
       toast({
@@ -232,8 +278,33 @@ const AddProductForm = ({ product = null, onSubmit = () => {} }) => {
       <input type="checkbox" {...register("isNewArrival")} />
       <label>New Arrival</label>
 
-      <Input type="file" onChange={handleImageUpload} accept="image/jpeg,image/png,image/gif" />
-      {imagePreview && <img src={imagePreview} alt="Preview" className="w-32 h-32 mt-2 rounded-md" />}
+      <div className="space-y-4">
+        <label className="block font-medium">Product Images</label>
+        <Input 
+          type="file" 
+          onChange={handleImageUpload} 
+          accept="image/jpeg,image/png,image/gif"
+          multiple
+        />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          {imagePreviews.map((preview, index) => (
+            <div key={index} className="relative group">
+              <img 
+                src={preview} 
+                alt={`Preview ${index + 1}`} 
+                className="w-full h-32 object-cover rounded-md"
+              />
+              <button
+                type="button"
+                onClick={() => removeImage(index)}
+                className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <Button type="submit">Save Product</Button>
     </form>

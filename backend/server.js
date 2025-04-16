@@ -86,12 +86,12 @@ const upload = multer({
     storage,
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
-        const allowedTypes = ['image/jpeg', 'image/jpg'];
-        const allowedExtensions = ['.jpg', '.jpeg'];
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        const allowedExtensions = ['.jpg', '.jpeg', '.png'];
         const ext = path.extname(file.originalname).toLowerCase();
         
         if (!allowedTypes.includes(file.mimetype) || !allowedExtensions.includes(ext)) {
-            const error = new Error('Only JPG/JPEG images are allowed!');
+            const error = new Error('Only JPG/JPEG/PNG images are allowed!');
             error.code = 'INVALID_FILE_TYPE';
             return cb(error, false);
         }
@@ -353,12 +353,14 @@ if (newArrivals) filter.isNewArrival = true;
 });
 
 // Create a new product
-// Create a new product
-app.post("/api/products", upload.single("image"), async (req, res) => {
+app.post("/api/products", upload.array("images", 5), async (req, res) => {
     try {
-        if (!req.file) return res.status(400).json({ error: "Product image is required" });
+        if (!req.files || req.files.length === 0) return res.status(400).json({ error: "At least one product image is required" });
 
         const productData = JSON.parse(req.body.product);
+        
+        // Create array of image paths
+        const imagePaths = req.files.map(file => `/uploads/${file.filename}`);
 
         const product = new ProductModel({
             name: productData.name,
@@ -367,13 +369,14 @@ app.post("/api/products", upload.single("image"), async (req, res) => {
             category: productData.category,
             brand: productData.brand,
             sku: productData.sku,
-            gender: productData.gender, // Add gender field
+            gender: productData.gender,
             stockQuantity: Number(productData.stockQuantity) || 0,
             originalPrice: Number(productData.originalPrice) || productData.price,
             discountPercentage: Number(productData.discountPercentage) || 0,
             sizeType: productData.sizeType || "standard",
             sizes: Array.isArray(productData.sizes) ? productData.sizes : [],
-            imageUrl: `/uploads/${req.file.filename}`
+            images: imagePaths,
+            imageUrl: imagePaths[0] // Set first image as main imageUrl for backward compatibility
         });
 
         await product.save();
@@ -396,8 +399,7 @@ app.get("/api/products/:id", async (req, res) => {
 });
 
 // Update product
-// Update product
-app.put("/api/products/:id", upload.single("image"), async (req, res) => {
+app.put("/api/products/:id", upload.array("images", 5), async (req, res) => {
     try {
         if (!req.body.updates) {
             return res.status(400).json({ error: "Updates data is required" });
@@ -413,14 +415,30 @@ app.put("/api/products/:id", upload.single("image"), async (req, res) => {
         const product = await ProductModel.findById(req.params.id);
         if (!product) return res.status(404).json({ error: "Product not found" });
 
-        if (req.file) {
-            updates.imageUrl = `/uploads/${req.file.filename}`;
-            if (product.imageUrl) {
-                const oldImagePath = path.join(__dirname, product.imageUrl);
-                if (fs.existsSync(oldImagePath)) {
-                    fs.unlinkSync(oldImagePath);
+        // Handle multiple image uploads
+        if (req.files && req.files.length > 0) {
+            // Create array of new image paths
+            const newImagePaths = req.files.map(file => `/uploads/${file.filename}`);
+            
+            // If replacing all images
+            if (updates.replaceAllImages) {
+                // Delete old images if they exist
+                if (product.images && product.images.length > 0) {
+                    product.images.forEach(imagePath => {
+                        const oldImagePath = path.join(__dirname, imagePath);
+                        if (fs.existsSync(oldImagePath)) {
+                            fs.unlinkSync(oldImagePath);
+                        }
+                    });
                 }
+                updates.images = newImagePaths;
+            } else {
+                // Add new images to existing ones
+                updates.images = [...(product.images || []), ...newImagePaths];
             }
+            
+            // Update main imageUrl for backward compatibility
+            updates.imageUrl = updates.images[0];
         }
 
         // Ensure sizeType and sizes are handled
@@ -442,7 +460,30 @@ app.delete("/api/products/:id", async (req, res) => {
         const product = await ProductModel.findById(req.params.id);
         if (!product) return res.status(404).json({ error: "Product not found" });
         
-        if (product.imageUrl) fs.unlinkSync(path.join(__dirname, product.imageUrl));
+        // Delete all images associated with the product
+        if (product.images && product.images.length > 0) {
+            product.images.forEach(imagePath => {
+                try {
+                    const fullPath = path.join(__dirname, imagePath);
+                    if (fs.existsSync(fullPath)) {
+                        fs.unlinkSync(fullPath);
+                    }
+                } catch (err) {
+                    console.error(`Error deleting image ${imagePath}:`, err);
+                }
+            });
+        } else if (product.imageUrl) {
+            // Fallback for backward compatibility
+            try {
+                const fullPath = path.join(__dirname, product.imageUrl);
+                if (fs.existsSync(fullPath)) {
+                    fs.unlinkSync(fullPath);
+                }
+            } catch (err) {
+                console.error(`Error deleting image ${product.imageUrl}:`, err);
+            }
+        }
+        
         await product.deleteOne();
         
         res.json({ message: "Product deleted successfully" });

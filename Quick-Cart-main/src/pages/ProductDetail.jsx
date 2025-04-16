@@ -135,34 +135,39 @@ const ProductDetail = () => {
           <div className="space-y-4">
             <div className="relative h-[400px] w-full rounded-lg overflow-hidden bg-gray-100">
               <img
-                src={`http://localhost:5000${product.imageUrl}`}
+                src={`http://localhost:5000${product.images && product.images.length > 0 ? product.images[0] : product.imageUrl}`}
                 alt={product.name}
                 className="w-full h-full object-contain"
+                id="main-product-image"
               />
             </div>
             
-            <div className="grid grid-cols-3 gap-4">
-              <div className="h-24 border rounded-lg overflow-hidden cursor-pointer">
-                <img
-                  src={`http://localhost:5000${product.imageUrl}`}
-                  alt={product.name}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <div className="h-24 border rounded-lg overflow-hidden cursor-pointer">
-                <img
-                  src={`http://localhost:5000${product.imageUrl}`}
-                  alt={product.name}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <div className="h-24 border rounded-lg overflow-hidden cursor-pointer">
-                <img
-                  src={`http://localhost:5000${product.imageUrl}`}
-                  alt={product.name}
-                  className="w-full h-full object-contain"
-                />
-              </div>
+            <div className="grid grid-cols-4 gap-4">
+              {product.images && product.images.length > 0 ? (
+                product.images.map((image, index) => (
+                  <div 
+                    key={index} 
+                    className="h-24 border rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors"
+                    onClick={() => {
+                      document.getElementById('main-product-image').src = `http://localhost:5000${image}`;
+                    }}
+                  >
+                    <img
+                      src={`http://localhost:5000${image}`}
+                      alt={`${product.name} - Image ${index + 1}`}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="h-24 border rounded-lg overflow-hidden cursor-pointer">
+                  <img
+                    src={`http://localhost:5000${product.imageUrl}`}
+                    alt={product.name}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              )}
             </div>
           </div>
 

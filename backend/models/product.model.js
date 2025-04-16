@@ -42,7 +42,8 @@ const productSchema = new mongoose.Schema({
     },
   },
   discountPercentage: { type: Number, default: 0, min: 0, max: 100 },
-  imageUrl: { type: String, default: "" },
+  images: [{ type: String }], // Array of image URLs
+  imageUrl: { type: String, default: "" }, // Keeping for backward compatibility
   createdAt: { type: Date, default: Date.now, required: true },
   isNewArrival: { type: Boolean, default: false },
 });

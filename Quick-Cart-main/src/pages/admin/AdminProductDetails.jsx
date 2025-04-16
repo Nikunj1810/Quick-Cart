@@ -23,9 +23,7 @@ const getProduct = async (id) => {
   const res = await fetch(`${BASE_URL}/api/products/${id}`);
   if (!res.ok) throw new Error((await res.json()).error || "Failed to fetch product");
   const product = await res.json();
-  if (product.imageUrl && !product.imageUrl.startsWith("http")) {
-    product.imageUrl = `${BASE_URL}${product.imageUrl}`;
-  }
+  product.imageUrl = product.imageUrl ? (product.imageUrl.startsWith("http") ? product.imageUrl : `${BASE_URL}${product.imageUrl}`) : "";
   product.checked = product.checked || false;
   return product;
 };
@@ -60,7 +58,9 @@ const updateProduct = async (id, updates, imageFile) => {
   });
 
   if (!res.ok) throw new Error((await res.json()).error || "Failed to update product");
-  return res.json();
+  const updatedProduct = await res.json();
+  updatedProduct.imageUrl = updatedProduct.imageUrl ? (updatedProduct.imageUrl.startsWith("http") ? updatedProduct.imageUrl : `${BASE_URL}${updatedProduct.imageUrl}`) : "";
+  return updatedProduct;
 };
 
 const deleteProduct = async (id) => {

@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import ProductCard from "@/components/product/ProductCard";
+const BASE_URL = "http://localhost:5000";
+
 const getAllProducts = async () => {
   try {
-    const response = await fetch('http://localhost:5000/api/products');
+    const response = await fetch(`${BASE_URL}/api/products`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -13,7 +15,7 @@ const getAllProducts = async () => {
     const products = Array.isArray(data) ? data : data.products || [];
     return products.map(product => ({
       ...product,
-      imageUrl: product.imageUrl ? `http://localhost:5000${product.imageUrl}` : '',
+      imageUrl: product.imageUrl ? (product.imageUrl.startsWith("http") ? product.imageUrl : `${BASE_URL}${product.imageUrl}`) : '',
       checked: product.checked || false
     }));
   } catch (error) {

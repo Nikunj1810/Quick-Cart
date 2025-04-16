@@ -14,11 +14,9 @@ const Shop = () => {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
-  const [priceRange, setPriceRange] = useState([0, 100]);
   const [sortBy, setSortBy] = useState('name');
 
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
@@ -57,38 +55,29 @@ const Shop = () => {
         const genderFilter = searchParams.get('gender');
         const genderParam = genderFilter ? `&gender=${genderFilter}` : '';
         
-        // Build the API URL with proper parameters
-        const baseUrl = `http://localhost:5000/api/products?page=${page}&limit=10`;
+        // Build the API URL with proper parameters - removed pagination
+        const baseUrl = 'http://localhost:5000/api/products';
         const filterParams = [categoryParam, priceRangeParam, genderParam]
           .filter(param => param)
           .join('&');
         
-        const apiUrl = filterParams ? `${baseUrl}&${filterParams}` : baseUrl;
-        console.log('Fetching products from:', apiUrl);
+        const apiUrl = filterParams ? `${baseUrl}?${filterParams}` : baseUrl;
         
         const response = await fetch(apiUrl);
         if (!response.ok) throw new Error('Failed to fetch products');
         const data = await response.json();
-        setProducts(data.products);
-        setTotalPages(data.pagination?.pages || 1);
+        
+        // Set all products at once for smooth scrolling
+        setProducts(Array.isArray(data) ? data : data.products || []);
       } catch (error) {
         console.error('Error fetching products:', error);
       }
     };
 
     fetchProducts();
-  }, [page, category, searchParams]);
+  }, [category, searchParams]);
   
-  // Reset page when category changes
-  useEffect(() => {
-    setPage(1);
-  }, [searchParams.get('categories'), category]);
-  
-  const handleNextPage = () => {
-    if (page < totalPages) {
-      setPage(page + 1);
-    }
-  };
+
 
   useEffect(() => {
     // Handle sorting only - filtering is now handled by the API
@@ -108,14 +97,6 @@ const Shop = () => {
       setProducts(sortedProducts);
     }
   }, [searchParams.get('sort'), products]);
-
-  const handlePriceChange = (value) => {
-    setPriceRange(value);
-    setSearchParams(params => {
-      params.set('price', value.join(','));
-      return params;
-    });
-  };
 
   const handleSortChange = (e) => {
     setSortBy(e.target.value);
@@ -155,11 +136,6 @@ const Shop = () => {
               </div>
             </div>
             <ProductGrid products={products} />
-            <div className="flex justify-center mt-4">
-              <Button onClick={handleNextPage} disabled={page >= totalPages} className="hover:bg-blue-600 hover:text-white transition">
-                Next Page
-              </Button>
-            </div>
           </div>
         </div>
       </div>

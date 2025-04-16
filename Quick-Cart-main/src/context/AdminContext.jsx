@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 
+const ADMIN_SESSION_KEY = "quickcart-admin";
 const AdminContext = createContext();
 
 export const AdminProvider = ({ children }) => {
@@ -8,21 +9,72 @@ export const AdminProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  useEffect(() => {
-    // Check if admin is stored in localStorage
-    const storedAdmin = localStorage.getItem("quickcart-admin");
+  const checkAdminSession = () => {
+    const storedAdmin = localStorage.getItem(ADMIN_SESSION_KEY);
+    const sessionExpires = localStorage.getItem("admin_session_expires");
+
+    if (sessionExpires) {
+      const expirationDate = new Date(sessionExpires);
+      const now = new Date();
+      
+      if (now > expirationDate) {
+        logout();
+        return false;
+      }
+    }
+
     if (storedAdmin) {
       try {
         const parsedAdmin = JSON.parse(storedAdmin);
         setAdmin(parsedAdmin);
         setIsAuthenticated(true);
+        return true;
       } catch (error) {
         console.error("Failed to parse admin data:", error);
-        localStorage.removeItem("quickcart-admin");
+        logout();
       }
     }
+    return false;
+  };
+
+  useEffect(() => {
+    // Check admin session on load
+    checkAdminSession();
     setIsLoading(false);
-  }, []);
+
+    // Handle admin session when leaving site
+    const handleBeforeUnload = () => {
+      if (isAuthenticated) {
+        localStorage.setItem("admin_last_activity", new Date().toISOString());
+      }
+    };
+
+    // Handle tab visibility changes
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        handleBeforeUnload();
+      } else if (document.visibilityState === 'visible' && isAuthenticated) {
+        checkAdminSession();
+      }
+    };
+
+    // Set up event listeners
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Check session periodically
+    const sessionCheckInterval = setInterval(() => {
+      if (isAuthenticated) {
+        checkAdminSession();
+      }
+    }, 60000); // Check every minute
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(sessionCheckInterval);
+    };
+  }, [isAuthenticated]);
 
   const login = async (email, password, remember = false) => {
     setIsLoading(true);
@@ -42,7 +94,11 @@ export const AdminProvider = ({ children }) => {
         setIsAuthenticated(true);
         
         if (remember) {
-          localStorage.setItem("quickcart-admin", JSON.stringify(mockAdmin));
+          localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(mockAdmin));
+          // Set session expiration (24 hours)
+          const expirationTime = 24 * 60 * 60 * 1000;
+          const expirationDate = new Date(Date.now() + expirationTime);
+          localStorage.setItem("admin_session_expires", expirationDate.toISOString());
         }
         
         setIsLoading(false);
@@ -73,7 +129,9 @@ export const AdminProvider = ({ children }) => {
   const logout = () => {
     setAdmin(null);
     setIsAuthenticated(false);
-    localStorage.removeItem("quickcart-admin");
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+    localStorage.removeItem("admin_session_expires");
+    localStorage.removeItem("admin_last_activity");
     
     toast({
       title: "Logged out",

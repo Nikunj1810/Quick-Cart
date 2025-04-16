@@ -4,26 +4,27 @@ import ProductForm from "@/components/admin/product/ProductForm";
 import CategoryManager from "@/components/admin/product/CategoryManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+
+// ✅ Helpers
+const BASE_URL = "http://localhost:5000";
+
+const removeBaseUrl = (url) => url?.replace(/^https?:\/\/[^/]+/, "") || "";
+
+// ✅ Services
 const getAllCategories = async () => {
-  const response = await fetch('http://localhost:5000/api/categories');
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to fetch categories');
-  }
-  return await response.json();
+  const res = await fetch(`${BASE_URL}/api/categories`);
+  if (!res.ok) throw new Error((await res.json()).error || "Failed to fetch categories");
+  return res.json();
 };
 
 const getProduct = async (id) => {
-  const response = await fetch(`http://localhost:5000/api/products/${id}`);
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to fetch product');
-  }
-  const product = await response.json();
-  if (product.imageUrl) {
-    product.imageUrl = `http://localhost:5000${product.imageUrl}`;
+  const res = await fetch(`${BASE_URL}/api/products/${id}`);
+  if (!res.ok) throw new Error((await res.json()).error || "Failed to fetch product");
+  const product = await res.json();
+  if (product.imageUrl && !product.imageUrl.startsWith("http")) {
+    product.imageUrl = `${BASE_URL}${product.imageUrl}`;
   }
   product.checked = product.checked || false;
   return product;
@@ -31,195 +32,121 @@ const getProduct = async (id) => {
 
 const createProduct = async (product, imageFile) => {
   const formData = new FormData();
-  if (imageFile) {
-    formData.append('image', imageFile);
-  }
-  formData.append('product', JSON.stringify(product));
+  if (imageFile) formData.append("image", imageFile);
+  formData.append("product", JSON.stringify(product));
 
-  const response = await fetch('http://localhost:5000/api/products', {
-    method: 'POST',
-    body: formData
+  const res = await fetch(`${BASE_URL}/api/products`, {
+    method: "POST",
+    body: formData,
   });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to create product');
-  }
-  return await response.json();
+  if (!res.ok) throw new Error((await res.json()).error || "Failed to create product");
+  return res.json();
 };
 
 const updateProduct = async (id, updates, imageFile) => {
   const formData = new FormData();
   if (imageFile) {
-    formData.append('image', imageFile);
+    formData.append("image", imageFile);
+  } else if (updates.imageUrl || updates.existingImageUrl) {
+    formData.append("imageUrl", removeBaseUrl(updates.imageUrl || updates.existingImageUrl));
   }
-  formData.append('updates', JSON.stringify(updates));
 
-  const response = await fetch(`http://localhost:5000/api/products/${id}`, {
-    method: 'PUT',
-    body: formData
+  formData.append("updates", JSON.stringify(updates));
+
+  const res = await fetch(`${BASE_URL}/api/products/${id}`, {
+    method: "PUT",
+    body: formData,
   });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to update product');
-  }
-  return await response.json();
+  if (!res.ok) throw new Error((await res.json()).error || "Failed to update product");
+  return res.json();
 };
 
 const deleteProduct = async (id) => {
-  const response = await fetch(`http://localhost:5000/api/products/${id}`, {
-    method: 'DELETE'
-  });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to delete product');
-  }
+  const res = await fetch(`${BASE_URL}/api/products/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error((await res.json()).error || "Failed to delete product");
 };
-
-
 
 const toggleProductChecked = async (id) => {
-  try {
-    const response = await fetch(`http://localhost:5000/api/products/${id}/toggle`, {
-      method: 'PUT'
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to toggle product status');
-    }
-    return await response.json();
-  } catch (error) {
-    throw new Error(`Failed to toggle product status: ${error.message}`);
-  }
+  const res = await fetch(`${BASE_URL}/api/products/${id}/toggle`, { method: "PUT" });
+  if (!res.ok) throw new Error((await res.json()).error || "Failed to toggle product status");
+  return res.json();
 };
 
+// ✅ Main Component
 const AdminProductDetails = () => {
   const { productId } = useParams();
   const isNewProduct = !productId || productId === "new";
   const navigate = useNavigate();
-  const { toast } = useToast();
 
-  const [product, setProduct] = useState(undefined);
+  const [product, setProduct] = useState();
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
+    const fetchInitialData = async () => {
       try {
-        const categoriesData = await getAllCategories();
-        setCategories(categoriesData);
-
-        if (!isNewProduct) {
-          const productData = await getProduct(productId);
-          if (productData) {
-            setProduct(productData);
-            console.log("Fetched product data:", productData);
-          } else {
-            toast({
-              title: "Error",
-              description: "Product not found",
-              variant: "destructive",
-              className: "bg-transparent border-black text-black rounded-lg shadow-lg"
-            });
-            navigate("/admin/products");
-          }
+        setIsLoading(true);
+        const [cats, prod] = await Promise.all([
+          getAllCategories(),
+          isNewProduct ? Promise.resolve(undefined) : getProduct(productId),
+        ]);
+        setCategories(cats);
+        if (prod) setProduct(prod);
+        else if (!isNewProduct) {
+          toast.error("Product not found");
+          navigate("/admin/products");
         }
-      } catch (error) {
-        console.error("Error loading product data:", error);
-        toast({
-          title: "Error",
-          description: error.message || "Failed to load product data. Please try again.",
-          variant: "destructive",
-          className: "bg-white border-red-500 text-red-500 rounded-lg shadow-lg"
-        });
+      } catch (err) {
+        toast.error(err.message || "Something went wrong.");
       } finally {
         setIsLoading(false);
       }
     };
-
-    fetchData();
-  }, [productId, isNewProduct, navigate, toast]);
+    fetchInitialData();
+  }, [productId, isNewProduct, navigate]);
 
   const handleProductSubmit = async (data, imageFile) => {
     try {
       if (isNewProduct) {
-        const newProduct = await createProduct(data, imageFile);
-        if (newProduct && newProduct._id) {
-          toast({
-            title: "Success",
-            description: "Product created successfully",
-            className: "bg-white border-green-500 text-green-500 rounded-lg shadow-lg"
-          });
-          navigate(`/admin/products/${newProduct._id}`);
-        } else {
-          throw new Error("Failed to create product - invalid response from server");
-        }
+        const newProd = await createProduct(data, imageFile);
+        toast.success("Product created successfully");
+        navigate(`/admin/products/${newProd._id}`);
       } else {
-        const updatedProduct = await updateProduct(productId, data, imageFile);
-        setProduct(updatedProduct);
-        toast({
-          title: "Success",
-          description: "Product updated successfully",
-          className: "bg-white border-green-500 text-green-500 rounded-lg shadow-lg"
-        });
+        const updated = await updateProduct(productId, {
+          ...data,
+          existingImageUrl: product?.imageUrl,
+        }, imageFile);
+        setProduct(updated);
+        toast.success("Product updated successfully");
       }
-    } catch (error) {
-      console.error("Error saving product:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save product. Please check your input and try again.",
-        variant: "destructive",
-      });
+    } catch (err) {
+      toast.error(err.message || "Failed to save product.");
     }
   };
 
   const handleProductDelete = async () => {
-    if (!productId) return;
-
     try {
       await deleteProduct(productId);
-      toast({
-        title: "Success",
-        description: "Product deleted successfully",
-        className: "bg-white border-green-500 text-green-500 rounded-lg shadow-lg"
-      });
+      toast.success("Product deleted successfully");
       navigate("/admin/products");
-    } catch (error) {
-      console.error("Error deleting product:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete product. Please try again.",
-        variant: "destructive",
-      });
+    } catch (err) {
+      toast.error(err.message || "Failed to delete product.");
     }
   };
 
   const handleToggleChecked = async () => {
-    if (!productId || !product) return;
-
     try {
-      const updatedProduct = await toggleProductChecked(productId);
-      if (updatedProduct) {
-        setProduct(updatedProduct);
-        toast({
-          title: updatedProduct.checked ? "Product Checked" : "Product Unchecked",
-          description: `${updatedProduct.name} has been ${updatedProduct.checked ? "added to" : "removed from"} checked products`,
-        });
-      }
-    } catch (error) {
-      console.error("Error toggling product status:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update product status. Please try again.",
-        variant: "destructive",
-      });
+      const updated = await toggleProductChecked(productId);
+      setProduct(updated);
+      toast.success(`${updated.name} has been ${updated.checked ? "added to" : "removed from"} checked products`);
+    } catch (err) {
+      toast.error(err.message || "Failed to toggle product.");
     }
   };
-  if (isLoading) {
-    return <div className="p-6">Loading...</div>;
-  }
+
+  if (isLoading) return <div className="p-6">Loading...</div>;
 
   return (
     <div className="p-6">
@@ -260,6 +187,14 @@ const AdminProductDetails = () => {
                 onDelete={!isNewProduct ? handleProductDelete : undefined}
                 categories={categories}
                 isNew={isNewProduct}
+                existingImageUrl={product?.imageUrl}
+                labels={{
+                  name: "Product Name",
+                  description: "Product Description",
+                  price: "Product Price",
+                  category: "Product Category",
+                  image: "Product Image",
+                }}
               />
             </CardContent>
           </Card>

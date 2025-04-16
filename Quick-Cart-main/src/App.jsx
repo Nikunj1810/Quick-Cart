@@ -24,6 +24,8 @@ import ContactUs from "./pages/ContactUs";
 import NotFound from "./pages/NotFound";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import UserOrderHistory from "./pages/user/UserOrderHistory";
+import UserOrderDetails from "./pages/user/UserOrderDetails";
 
 // Admin Pages
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -52,6 +54,8 @@ const router = createBrowserRouter([
   { path: "/about-us", element: <AboutUs /> },
   { path: "/contact-us", element: <ContactUs /> },
   { path: "/profile", element: <Profile /> },
+  { path: "/user/orders", element: <UserOrderHistory /> },
+  { path: "/user/orders/:orderId", element: <UserOrderDetails /> },
   { path: "/admin/login", element: <AdminLogin /> },
   {
     path: "/admin",
@@ -64,6 +68,7 @@ const router = createBrowserRouter([
       { path: "products/:productId", element: <AdminProductDetails /> },
       { path: "orders", element: <AdminOrderList /> },
       { path: "orders/:orderId", element: <AdminOrderDetails /> },
+      { path: "customer-queries", element: <CustomerQueries /> },
     ],
   },
   { path: "*", element: <NotFound /> },

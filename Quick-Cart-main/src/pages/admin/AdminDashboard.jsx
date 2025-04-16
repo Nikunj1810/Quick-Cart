@@ -1,17 +1,55 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { MoreVertical, ShoppingBag } from "lucide-react";
+import { MoreVertical, ShoppingBag, Users, Package, CheckCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 
-const orderData = [
-  { id: '#25426', product: 'Cloth', date: 'Nov 8th,2023', customer: 'Kavin', status: 'Delivered', amount: '₹200.00' },
-  { id: '#25425', product: 'T-shirt', date: 'Nov 7th,2023', customer: 'Kamlesh', status: 'Canceled', amount: '₹200.00' },
-  { id: '#25424', product: 'Paint', date: 'Nov 6th,2023', customer: 'Nikhil', status: 'Delivered', amount: '₹200.00' },
-];
-
 const AdminDashboard = () => {
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalOrders: 0,
+    totalProducts: 0,
+    deliveredOrders: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [recentOrders, setRecentOrders] = useState([]);
+
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/admin/dashboard-stats');
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard statistics');
+        }
+        const data = await response.json();
+        setStats(data);
+        setRecentOrders(data.recentOrders || []);
+      } catch (err) {
+        setError(err.message);
+        console.error('Error fetching dashboard stats:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardStats();
+
+    // Refresh stats every 5 minutes
+    const intervalId = setInterval(fetchDashboardStats, 5 * 60 * 1000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  if (error) {
+    return (
+      <div className="p-6 text-center text-red-500">
+        Error loading dashboard statistics: {error}
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -22,76 +60,54 @@ const AdminDashboard = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard title="Total Orders" amount="₹126,500" comparison="Compared to Oct 2023" />
-        <StatCard title="Active Orders" amount="₹126,500" comparison="Compared to Oct 2023" />
-        <StatCard title="Completed Orders" amount="₹126,500" comparison="Compared to Oct 2023" />
-        <StatCard title="Return Orders" amount="₹126,500" comparison="Compared to Oct 2023" />
+        <StatCard 
+          title="Total Users" 
+          amount={loading ? "Loading..." : stats.totalUsers}
+          icon={Users}
+          loading={loading}
+        />
+        <StatCard 
+          title="Total Orders" 
+          amount={loading ? "Loading..." : stats.totalOrders}
+          icon={ShoppingBag}
+          loading={loading}
+        />
+        <StatCard 
+          title="Total Products" 
+          amount={loading ? "Loading..." : stats.totalProducts}
+          icon={Package}
+          loading={loading}
+        />
+        <StatCard 
+          title="Delivered Orders" 
+          amount={loading ? "Loading..." : stats.deliveredOrders}
+          icon={CheckCircle}
+          loading={loading}
+        />
       </div>
       
-      <Card>
-        <div className="p-6 flex justify-between items-center border-b">
-          <h2 className="text-xl font-bold">Recent Orders</h2>
-          <button>
-            <MoreVertical className="h-5 w-5" />
-          </button>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox />
-                </TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Customer Name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orderData.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>
-                    <Checkbox />
-                  </TableCell>
-                  <TableCell>{order.product}</TableCell>
-                  <TableCell>{order.id}</TableCell>
-                  <TableCell>{order.date}</TableCell>
-                  <TableCell>{order.customer}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={order.status} />
-                  </TableCell>
-                  <TableCell className="text-right">{order.amount}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
+
     </div>
   );
 };
 
-const StatCard = ({ title, amount, comparison }) => {
+const StatCard = ({ title, amount, icon: Icon, loading }) => {
   return (
     <Card>
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-base font-medium">{title}</h3>
-          <button>
-            <MoreVertical className="h-5 w-5" />
-          </button>
         </div>
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-blue-900 rounded-md flex items-center justify-center">
-            <ShoppingBag className="h-5 w-5 text-white" />
+          <div className="w-10 h-10 bg-blue-100 rounded-md flex items-center justify-center">
+            <Icon className="h-5 w-5 text-blue-600" />
           </div>
           <div>
-            <p className="text-xl font-bold">{amount}</p>
-            <p className="text-xs text-gray-500">{comparison}</p>
+            {loading ? (
+              <div className="h-6 w-20 bg-gray-200 animate-pulse rounded"></div>
+            ) : (
+              <p className="text-xl font-bold">{amount}</p>
+            )}
           </div>
         </div>
       </CardContent>

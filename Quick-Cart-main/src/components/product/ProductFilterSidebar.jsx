@@ -23,7 +23,12 @@ const ProductFilterSidebar = ({ categories = [] }) => {
   
   const [selectedCategories, setSelectedCategories] = useState(() => {
     const categoryParam = searchParams.get('categories');
-    return categoryParam ? [categoryParam] : [];
+    return categoryParam ? categoryParam.split(',') : [];
+  });
+
+  // Initialize gender filter state with URL params or default
+  const [selectedGender, setSelectedGender] = useState(() => {
+    return searchParams.get('gender') || '';
   });
 
   // Sync input fields with slider when price range changes
@@ -69,9 +74,19 @@ const ProductFilterSidebar = ({ categories = [] }) => {
   };
 
   const handleCategoryChange = (categoryId) => {
-    setSelectedCategories([categoryId]);
+    let newCategories;
+    if (selectedCategories.includes(categoryId)) {
+      newCategories = selectedCategories.filter(id => id !== categoryId);
+    } else {
+      newCategories = [...selectedCategories, categoryId];
+    }
+    setSelectedCategories(newCategories);
     setSearchParams((params) => {
-      params.set("categories", categoryId);
+      if (newCategories.length > 0) {
+        params.set("categories", newCategories.join(','));
+      } else {
+        params.delete("categories");
+      }
       return params;
     });
   };
@@ -80,6 +95,24 @@ const ProductFilterSidebar = ({ categories = [] }) => {
     setSelectedCategories([]);
     setSearchParams((params) => {
       params.delete("categories");
+      return params;
+    });
+  };
+
+  // Handle gender filter change
+  const handleGenderChange = (gender) => {
+    setSelectedGender(gender);
+    setSearchParams((params) => {
+      params.set("gender", gender);
+      return params;
+    });
+  };
+
+  // Clear gender filter
+  const handleClearGender = () => {
+    setSelectedGender('');
+    setSearchParams((params) => {
+      params.delete("gender");
       return params;
     });
   };
@@ -159,6 +192,69 @@ const ProductFilterSidebar = ({ categories = [] }) => {
               </div>
             </div>
           </div>
+          {/* Gender Filter */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">Gender</h3>
+              {selectedGender && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleClearGender}
+                  className="text-xs h-7 px-2"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+            <div className="space-y-2">
+              <RadioGroup value={selectedGender} onValueChange={(value) => handleGenderChange(value)}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem 
+                    id="gender-men" 
+                    value="Men" 
+                    checked={selectedGender === "Men"} 
+                    onCheckedChange={() => handleGenderChange("Men")}
+                  />
+                  <Label 
+                    htmlFor="gender-men" 
+                    className="text-sm cursor-pointer"
+                  >
+                    Men
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem 
+                    id="gender-women" 
+                    value="Women" 
+                    checked={selectedGender === "Women"} 
+                    onCheckedChange={() => handleGenderChange("Women")}
+                  />
+                  <Label 
+                    htmlFor="gender-women" 
+                    className="text-sm cursor-pointer"
+                  >
+                    Women
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem 
+                    id="gender-unisex" 
+                    value="Unisex" 
+                    checked={selectedGender === "Unisex"} 
+                    onCheckedChange={() => handleGenderChange("Unisex")}
+                  />
+                  <Label 
+                    htmlFor="gender-unisex" 
+                    className="text-sm cursor-pointer"
+                  >
+                    Unisex
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+
           {/* Category Filter */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -175,24 +271,23 @@ const ProductFilterSidebar = ({ categories = [] }) => {
               )}
             </div>
             <div className="space-y-2">
-              <RadioGroup value={selectedCategories[0]} onValueChange={(value) => handleCategoryChange(value)}>
-                {categories.map((category) => (
-                  <div key={category._id || category.id} className="flex items-center space-x-2">
-                    <RadioGroupItem 
-                      id={`category-${category._id || category.id}`} 
-                      value={category._id || category.id} 
-                      checked={selectedCategories.includes(category._id || category.id)} 
-                      onCheckedChange={() => handleCategoryChange(category._id || category.id)}
-                    />
-                    <Label 
-                      htmlFor={`category-${category._id || category.id}`} 
-                      className="text-sm cursor-pointer"
-                    >
-                      {category.name}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
+              {categories.map((category) => (
+                <div key={category._id || category.id} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id={`category-${category._id || category.id}`}
+                    checked={selectedCategories.includes(category._id || category.id)}
+                    onChange={() => handleCategoryChange(category._id || category.id)}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <Label
+                    htmlFor={`category-${category._id || category.id}`}
+                    className="text-sm cursor-pointer"
+                  >
+                    {category.name}
+                  </Label>
+                </div>
+              ))}
             </div>
           </div>
         </CardContent>

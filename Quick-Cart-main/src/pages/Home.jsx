@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import MainLayout from "@/components/layout/MainLayout";
 import ProductCard from "@/components/product/ProductCard";
+
 import { useEffect, useState } from "react";
 
 const Home = () => {
@@ -185,44 +186,6 @@ const Home = () => {
       <section className="py-16">
         <div className="container px-4 mx-auto">
           <div className="p-8 bg-gray-100 rounded-lg">
-            <h2 className="mb-8 text-2xl font-bold">BROWSE BY dress STYLE</h2>
-            
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
-              <Link to="/category/casual" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
-                <div className="flex flex-col items-center space-y-4">
-                  <img src="/assets/casual.png" alt="Casual style" className="object-cover w-full h-40 rounded-md" />
-                  <h3 className="text-lg font-medium">Casual</h3>
-                </div>
-              </Link>
-              
-              <Link to="/category/formal" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
-                <div className="flex flex-col items-center space-y-4">
-                  <img src="/assets/formal.png" alt="Formal style" className="object-cover w-full h-40 rounded-md" />
-                  <h3 className="text-lg font-medium">Formal</h3>
-                </div>
-              </Link>
-              
-              <Link to="/category/party" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
-                <div className="flex flex-col items-center space-y-4">
-                  <img src="/assets/party.png" alt="Party style" className="object-cover w-full h-40 rounded-md" />
-                  <h3 className="text-lg font-medium">Party</h3>
-                </div>
-              </Link>
-              
-              <Link to="/category/gym" className="p-6 transition-shadow bg-white rounded-lg hover:shadow-md">
-                <div className="flex flex-col items-center space-y-4">
-                  <img src="/assets/gym.png" alt="Gym style" className="object-cover w-full h-40 rounded-md" />
-                  <h3 className="text-lg font-medium">Gym</h3>
-                </div>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16">
-        <div className="container px-4 mx-auto">
-          <div className="p-8 bg-gray-100 rounded-lg">
             <h2 className="mb-8 text-2xl font-bold text-center uppercase">
               BROWSE BY dress STYLE
             </h2>
@@ -265,6 +228,7 @@ const Home = () => {
           </div>
         </div>
       </section>
+      
     </MainLayout>
   );
 };

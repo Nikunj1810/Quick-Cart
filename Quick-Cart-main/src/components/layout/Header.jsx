@@ -7,6 +7,9 @@ import {
   Search,
   Menu,
   LayoutDashboard,
+  LogOut,
+  FileText,
+  UserCircle
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/context/CartContext";
@@ -14,16 +17,27 @@ import { useUser } from "@/context/UserContext";
 import { useAdmin } from "@/context/AdminContext";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const navigate = useNavigate();
   const { cartCount } = useCart();
-  const { isAuthenticated, user } = useUser(); // Now includes user
+  const { isAuthenticated, user, logout } = useUser(); // Now includes user and logout
   const { isAuthenticated: isAdminAuthenticated } = useAdmin();
   const [showPromo, setShowPromo] = useState(true);
   const [showSearch, setShowSearch] = useState(false);
 
   const handleAdminDashboard = () => navigate("/admin/dashboard");
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
 
   return (
@@ -171,16 +185,39 @@ const Header = () => {
                 </Button>
               </Link>
             ) : (
-              <Link to="/profile" aria-label="Profile">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="p-2 rounded-full border-2 border-black transition-all duration-300 
-        hover:bg-black hover:text-white"
-                >
-                  <User className="h-6 w-6" />
-                </Button>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="p-2 rounded-full border-2 border-black transition-all duration-300 
+                      hover:bg-black hover:text-white"
+                  >
+                    <User className="h-6 w-6" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="flex items-center gap-2">
+                      <UserCircle className="h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/user/orders" className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      My Orders
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-red-600 cursor-pointer"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
 
             {/* Admin shortcut on mobile */}

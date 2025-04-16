@@ -39,9 +39,11 @@ const Shop = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        // Get category from either URL params or search params
+        // Get categories from search params
         const categoryFilter = searchParams.get('categories');
-        const categoryParam = categoryFilter ? `&category=${categoryFilter}` : category ? `&category=${category}` : '';
+        const categoryParam = categoryFilter
+          ? categoryFilter.split(',').map(cat => `category=${cat}`).join('&')
+          : category ? `category=${category}` : '';
         
         // Get price range from search params
         const priceParam = searchParams.get('price');
@@ -51,8 +53,17 @@ const Shop = () => {
           priceRangeParam = `&minPrice=${min}&maxPrice=${max}`;
         }
         
+        // Get gender filter from search params
+        const genderFilter = searchParams.get('gender');
+        const genderParam = genderFilter ? `&gender=${genderFilter}` : '';
+        
         // Build the API URL with proper parameters
-        const apiUrl = `http://localhost:5000/api/products?page=${page}&limit=10${categoryParam}${priceRangeParam}`;
+        const baseUrl = `http://localhost:5000/api/products?page=${page}&limit=10`;
+        const filterParams = [categoryParam, priceRangeParam, genderParam]
+          .filter(param => param)
+          .join('&');
+        
+        const apiUrl = filterParams ? `${baseUrl}&${filterParams}` : baseUrl;
         console.log('Fetching products from:', apiUrl);
         
         const response = await fetch(apiUrl);

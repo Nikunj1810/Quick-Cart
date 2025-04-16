@@ -15,6 +15,7 @@ const productSchema = new mongoose.Schema({
   category: { type: String, required: true, trim: true },
   brand: { type: String, required: true, trim: true },
   sku: { type: String, required: true, trim: true },
+  gender: { type: String, enum: ['Men', 'Women', 'Unisex'], required: true }, // Gender field for categorizing products
 
   // New Fields 👇
   sizeType: { type: String, enum: ['standard', 'waist'], required: true }, 

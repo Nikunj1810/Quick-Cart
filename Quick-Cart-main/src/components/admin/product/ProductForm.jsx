@@ -17,6 +17,7 @@ const productSchema = z.object({
   price: z.coerce.number().min(1),
   originalPrice: z.coerce.number().min(0).optional(),
   sku: z.string().min(2),
+  gender: z.enum(["Men", "Women", "Unisex"], { required_error: "Gender is required" }),
   discountPercentage: z.coerce.number().min(0).max(100).optional(),
   imageUrl: z.string().optional(),
   sizeType: z.enum(["standard", "waist"]),
@@ -121,7 +122,13 @@ const AddProductForm = ({ product = null, onSubmit = () => {} }) => {
       if (image) {
         formData.append("image", image);
       }
-      formData.append("product", JSON.stringify(productData));
+      
+      // Format data differently for create vs update
+      if (product) {
+        formData.append("updates", JSON.stringify(productData));
+      } else {
+        formData.append("product", JSON.stringify(productData));
+      }
 
       const apiUrl = product
         ? `http://localhost:5000/api/products/${product._id}`
@@ -183,6 +190,15 @@ const AddProductForm = ({ product = null, onSubmit = () => {} }) => {
 
       <Input placeholder="SKU" {...register("sku")} />
       {errors.sku && <p className="text-red-500 text-sm">{errors.sku.message}</p>}
+
+      <select {...register("gender")} className="w-full p-2 border rounded-md">
+        <option value="">Select Gender</option>
+        <option value="Men">Men</option>
+        <option value="Women">Women</option>
+        <option value="Unisex">Unisex</option>
+      </select>
+      {errors.gender && <p className="text-red-500 text-sm">{errors.gender.message}</p>}
+      
       <Input type="number" placeholder="Stock Quantity" {...register("stockQuantity")} />
       <Input type="number" placeholder="Price" {...register("price")} />
       <Input type="number" placeholder="Original Price" {...register("originalPrice")} />

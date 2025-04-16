@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { useCart } from "@/context/CartContext";
 import { useAdmin } from "@/context/AdminContext";
-import { toast } from "sonner"; // ✅ Sonner import
+import { toast } from "sonner";
 
 const ProductDetail = () => {
   const { productId } = useParams();
@@ -24,7 +24,6 @@ const ProductDetail = () => {
   const { isAuthenticated: isAdmin } = useAdmin();
 
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
   const [product, setProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,9 +35,7 @@ const ProductDetail = () => {
 
       setIsLoading(true);
       try {
-        const response = await fetch(
-          `http://localhost:5000/api/products/${productId}`
-        );
+        const response = await fetch(`http://localhost:5000/api/products/${productId}`);
         const data = await response.json();
 
         if (!response.ok) throw new Error(data.error || "Product not found");
@@ -69,7 +66,7 @@ const ProductDetail = () => {
       return;
     }
 
-    const sizeType = product.category?.includes('pants') ? 'waist' : 'standard';
+    const sizeType = product.category?.includes("pants") ? "waist" : "standard";
 
     try {
       setIsLoading(true);
@@ -119,56 +116,78 @@ const ProductDetail = () => {
     );
   }
 
-  const discountPercent = product.originalPrice && product.originalPrice > product.price
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-    : null;
-
   return (
     <MainLayout>
       <div className="container mx-auto py-8 px-4">
+        {/* Breadcrumb */}
+        <div className="mb-6 flex items-center gap-2 text-gray-500">
+          <Link to="/" className="hover:text-gray-700">Home</Link>
+          <span>›</span>
+          <Link to="/shop" className="hover:text-gray-700">Shop</Link>
+          <span>›</span>
+          <Link to="/shop/mens" className="hover:text-gray-700">Mens</Link>
+          <span>›</span>
+          <span className="text-gray-700">T-shirts</span>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Image */}
-          <div className="relative h-[300px] md:h-[400px] w-full max-w-[500px] mx-auto rounded-xl overflow-hidden">
-            <div className="w-full h-full overflow-hidden rounded-xl bg-gray-50">
+          {/* Left Side - Image Gallery */}
+          <div className="space-y-4">
+            <div className="relative h-[400px] w-full rounded-lg overflow-hidden bg-gray-100">
               <img
                 src={`http://localhost:5000${product.imageUrl}`}
                 alt={product.name}
-                className="w-full h-full object-contain rounded-xl"
+                className="w-full h-full object-contain"
               />
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div className="h-24 border rounded-lg overflow-hidden cursor-pointer">
+                <img
+                  src={`http://localhost:5000${product.imageUrl}`}
+                  alt={product.name}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="h-24 border rounded-lg overflow-hidden cursor-pointer">
+                <img
+                  src={`http://localhost:5000${product.imageUrl}`}
+                  alt={product.name}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="h-24 border rounded-lg overflow-hidden cursor-pointer">
+                <img
+                  src={`http://localhost:5000${product.imageUrl}`}
+                  alt={product.name}
+                  className="w-full h-full object-contain"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Details */}
-          <div className="space-y-8">
-            <div>
-              <h1 className="text-4xl font-bold mb-4">{product.name}</h1>
-
-              <div className="flex items-center gap-4">
-                <p className="text-3xl font-bold text-black">{formatIndianRupee(product.price)}</p>
-                {product.originalPrice > product.price && (
-                  <>
-                    <p className="text-xl text-gray-400 line-through">
-                      {formatIndianRupee(product.originalPrice)}
-                    </p>
-                    <span className="px-3 py-1 bg-red-100 text-red-600 text-sm font-semibold rounded-full animate-pulse">
-                      {discountPercent}% OFF
-                    </span>
-                  </>
-                )}
-              </div>
+          {/* Right Side - Product Details */}
+          <div className="space-y-6">
+            <h1 className="text-4xl font-bold">{product.name}</h1>
+            
+            <div className="text-3xl font-bold">
+              {formatIndianRupee(product.price)}
             </div>
-
+            
+            <div className="text-gray-600">
+              <p>{product.description}</p>
+            </div>
+            
             {product.sizes?.length > 0 && (
-              <div>
-                <h3 className="text-base font-semibold mb-4">Select Size</h3>
+              <div className="space-y-2">
+                <h3 className="font-medium text-lg">Choose Size</h3>
                 <div className="flex flex-wrap gap-3">
                   {product.sizes.map((sizeObj) => (
                     <button
                       key={sizeObj._id}
-                      className={`px-6 py-3 border-2 rounded-lg font-medium transition-all
-                        ${selectedSize === sizeObj.size ? "border-black bg-black text-white" : "border-gray-200 hover:border-gray-300"}
-                        ${sizeObj.quantity === 0 ? "opacity-50 cursor-not-allowed" : ""}
-                      `}
+                      className={`px-4 py-2 rounded-md border 
+                        ${selectedSize === sizeObj.size ? "bg-black text-white" : "bg-gray-100 hover:bg-gray-200"}
+                        ${sizeObj.quantity === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
                       onClick={() => setSelectedSize(sizeObj.size)}
                       disabled={sizeObj.quantity === 0}
                     >
@@ -179,99 +198,45 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {product.colors?.length > 0 && (
-              <div>
-                <h3 className="text-base font-semibold mb-4">Select Color</h3>
-                <div className="flex flex-wrap gap-3">
-                  {product.colors.map((color) => (
-                    <button
-                      key={color}
-                      className={`w-12 h-12 rounded-full border-2 transition-all ${
-                        selectedColor === color ? "ring-2 ring-black" : ""
-                      }`}
-                      style={{ backgroundColor: color }}
-                      onClick={() => setSelectedColor(color)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div>
-              <h3 className="text-base font-semibold mb-4">Quantity</h3>
-              <div className="flex items-center gap-4 w-fit border-2 border-gray-200 rounded-lg p-1">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center border rounded-md">
                 <button
-                  className="p-2 hover:bg-gray-100 rounded-md"
+                  className="p-3 hover:bg-gray-100"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 >
-                  <Minus className="w-5 h-5" />
+                  <Minus className="w-4 h-4" />
                 </button>
                 <input
-                  className="w-16 text-center text-lg font-medium bg-transparent"
+                  className="w-12 text-center text-lg font-medium bg-transparent"
                   type="number"
                   value={quantity}
                   readOnly
                 />
                 <button
-                  className="p-2 hover:bg-gray-100 rounded-md"
+                  className="p-3 hover:bg-gray-100"
                   onClick={() => setQuantity(quantity + 1)}
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-4 h-4" />
                 </button>
               </div>
+              
+              <button
+  onClick={handleAddToCart}
+  className="flex-1 bg-black text-white py-3 px-6 rounded-2xl hover:bg-black/90 transition-colors"
+>
+  Add to Cart
+</button>
             </div>
 
-            <button
-              onClick={handleAddToCart}
-              className="rounded-full bg-black text-white py-3 px-6 hover:bg-gray-800 transition-colors duration-300"
-            >
-              Add to Cart
-            </button>
+            {/* Brand section */}
+            {product.brand && (
+              <div className="pt-4 border-t">
+                <h3 className="font-medium text-lg mb-2">Brand</h3>
+                <p className="text-gray-700">{product.brand}</p>
+              </div>
+            )}
 
-            {/* Login Dialog */}
-            <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-              <DialogContent className="sm:max-w-[425px] bg-white shadow-2xl border-2 border-black/10 rounded-[32px]">
-                <DialogHeader className="space-y-3">
-                  <DialogTitle className="text-3xl font-bold text-center bg-gradient-to-r from-black to-gray-700 bg-clip-text text-transparent">
-                    Login Required
-                  </DialogTitle>
-                  <DialogDescription className="text-center text-base text-gray-600">
-                    Please login or create an account to add items to your cart and start shopping!
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="flex flex-col gap-5 py-6">
-                  <Button
-                    variant="outline"
-                    className="w-full py-6 text-lg font-medium rounded-2xl border-2 hover:bg-black hover:text-white"
-                    onClick={() => {
-                      setShowLoginDialog(false);
-                      navigate("/login");
-                    }}
-                  >
-                    Login to Your Account
-                  </Button>
-                  <div className="relative my-2">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t-2 border-gray-100" />
-                    </div>
-                    <div className="relative flex justify-center text-sm uppercase">
-                      <span className="bg-white px-6 text-gray-400 font-semibold tracking-wider">Or</span>
-                    </div>
-                  </div>
-                  <Button
-                    className="w-full py-6 text-lg font-medium bg-black text-white rounded-2xl hover:scale-105"
-                    onClick={() => {
-                      setShowLoginDialog(false);
-                      navigate("/signup");
-                    }}
-                  >
-                    Create New Account
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            {/* Admin */}
+            {/* Admin Options */}
             {isAdmin && (
               <div className="flex gap-6 pt-4 border-t">
                 <Link to={`/admin/products/${productId}`} className="text-blue-600 hover:text-blue-800">
@@ -285,6 +250,49 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Login Dialog */}
+      <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+        <DialogContent className="sm:max-w-[425px] bg-white shadow-2xl border-2 border-black/10 rounded-[32px]">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-3xl font-bold text-center bg-gradient-to-r from-black to-gray-700 bg-clip-text text-transparent">
+              Login Required
+            </DialogTitle>
+            <DialogDescription className="text-center text-base text-gray-600">
+              Please login or create an account to add items to your cart and start shopping!
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-5 py-6">
+            <Button
+              variant="outline"
+              className="w-full py-6 text-lg font-medium rounded-2xl border-2 hover:bg-black hover:text-white"
+              onClick={() => {
+                setShowLoginDialog(false);
+                navigate("/login");
+              }}
+            >
+              Login to Your Account
+            </Button>
+            <div className="relative my-2">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t-2 border-gray-100" />
+              </div>
+              <div className="relative flex justify-center text-sm uppercase">
+                <span className="bg-white px-6 text-gray-400 font-semibold tracking-wider">Or</span>
+              </div>
+            </div>
+            <Button
+              className="w-full py-6 text-lg font-medium bg-black text-white rounded-2xl hover:scale-105"
+              onClick={() => {
+                setShowLoginDialog(false);
+                navigate("/signup");
+              }}
+            >
+              Create New Account
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };

@@ -2,15 +2,16 @@ import { getAuthHeaders, handleApiResponse } from '@/utils/api-helpers';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
-const getCurrentUserId = () => {
+const getCurrentUser = () => {
   const userData = localStorage.getItem('user');
   if (!userData) throw new Error('User not authenticated');
   
   try {
     const user = JSON.parse(userData);
-    if (!user || !user._id) throw new Error('Invalid user data');
-    return user._id;
+    if (!user || !user._id || !user.email) throw new Error('Invalid user data');
+    return user;
   } catch (error) {
+    console.error('Error parsing user data:', error);
     throw new Error('Failed to parse user data');
   }
 };
@@ -18,11 +19,11 @@ const getCurrentUserId = () => {
 export const orderApi = {
   // Create a new order
   createOrder: async (orderData) => {
-    const userId = getCurrentUserId();
+    const user = getCurrentUser();
     const response = await fetch(`${API_BASE_URL}/orders`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ ...orderData, userId })
+      body: JSON.stringify({ ...orderData, userId: user._id, userEmail: user.email })
     });
     return handleApiResponse(response);
   },

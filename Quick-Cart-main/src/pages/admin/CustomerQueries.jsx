@@ -149,6 +149,62 @@ const CustomerQueries = () => {
     );
   }
 
+  if (queries.length === 0) {
+    return (
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">Customer Queries</h1>
+            <p className="text-sm text-gray-500">
+              <Link to="/admin/dashboard" className="hover:underline">Home</Link> &gt; Customer Queries
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <form onSubmit={handleSearch} className="flex gap-2">
+              <Input 
+                type="text" 
+                placeholder="Search by name, email or subject" 
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-64"
+              />
+              <Button type="submit" variant="outline" className="bg-white text-sm">
+                <Search className="h-4 w-4 mr-2" />
+                Search
+              </Button>
+            </form>
+          </div>
+        </div>
+
+        <Card className="shadow-lg">
+          <div className="p-8 text-center">
+            <div className="mb-4 text-gray-400">
+              <Search className="h-12 w-12 mx-auto mb-2" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No Customer Queries Found
+            </h3>
+            <p className="text-gray-500 mb-4">
+              {searchTerm ? 
+                "No queries match your search criteria. Try different keywords or clear the search." :
+                "There are no customer queries at the moment. New queries will appear here when customers contact us."}
+            </p>
+            {searchTerm && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchInput("");
+                  setSearchTerm("");
+                }}
+              >
+                Clear Search
+              </Button>
+            )}
+          </div>
+        </Card>
+      </div>
+    );
+  }
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">

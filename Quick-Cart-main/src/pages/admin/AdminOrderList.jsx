@@ -5,12 +5,13 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
-
-const fetchOrders = async (page = 1, limit = 10) => {
+const fetchOrders = async () => {
   try {
-    const response = await fetch(`http://localhost:5000/api/orders?page=${page}&limit=${limit}`);
+    const response = await fetch('http://localhost:5000/api/orders?limit=1000');
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({
         status: response.status,
@@ -31,18 +32,15 @@ const fetchOrders = async (page = 1, limit = 10) => {
       throw new Error(`Invalid orders data structure. Received: ${JSON.stringify(data)}`);
     }
     
-    // Return both orders and pagination info
     return {
       orders: data.orders.map(order => ({
-      id: `#${order._id || ''}`,
-      product: order.items?.[0]?.name || 'Unknown',
-      date: new Date(order.orderDate).toLocaleDateString(),
-      customer: order.shippingInfo?.fullName || 'Unknown',
-      status: order.status,
-      amount: `₹${order.orderTotal?.toFixed(2) || '0.00'}`
-    })),
-      totalPages: data.totalPages,
-      currentPage: data.currentPage
+        id: `#${order._id || ''}`,
+        product: order.items?.[0]?.name || 'Unknown',
+        date: new Date(order.orderDate).toLocaleDateString(),
+        customer: order.shippingInfo?.fullName || 'Unknown',
+        status: order.status,
+        amount: `₹${order.orderTotal?.toFixed(2) || '0.00'}`
+      }))
     };
   } catch (error) {
     console.error('Error fetching orders:', {
@@ -53,14 +51,193 @@ const fetchOrders = async (page = 1, limit = 10) => {
   }
 };
 
+const updateOrderStatus = async (orderId, status) => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update order status');
+    }
+
+    return await response.json();
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
+
 const AdminOrderList = () => {
-  const [page, setPage] = React.useState(1);
+  const [selectedOrders, setSelectedOrders] = React.useState([]);
+  const queryClient = useQueryClient();
   const { data, isLoading, error } = useQuery({ 
-    queryKey: ["orders", page], 
-    queryFn: () => fetchOrders(page) 
+    queryKey: ["orders"], 
+    queryFn: fetchOrders 
   });
   
   const ordersData = data?.orders || [];
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedOrders(ordersData.map(order => order.id));
+    } else {
+      setSelectedOrders([]);
+    }
+  };
+
+  const handleSelectOrder = (orderId, checked) => {
+    if (checked) {
+      setSelectedOrders([...selectedOrders, orderId]);
+    } else {
+      setSelectedOrders(selectedOrders.filter(id => id !== orderId));
+    }
+  };
+
+  const handleBulkStatusUpdate = async (newStatus) => {
+    try {
+      await Promise.all(
+        selectedOrders.map(orderId =>
+          updateOrderStatus(orderId.substring(1), newStatus.toLowerCase())
+        )
+      );
+      await queryClient.invalidateQueries(["orders"]);
+      toast.success('Orders status updated successfully');
+      setSelectedOrders([]);
+    } catch (error) {
+      console.error('Error updating orders status:', error);
+      toast.error('Failed to update orders status');
+    }
+  };
+
+  const handleBulkPrint = async () => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Bulk Order Invoices</title>
+          <style>
+            body { font-family: Arial, sans-serif; }
+            .invoice { page-break-after: always; padding: 20px; max-width: 800px; margin: 0 auto; }
+            .invoice:last-child { page-break-after: auto; }
+            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f5f5f5; }
+            .header { text-align: center; margin-bottom: 20px; }
+            .flex { display: flex; justify-content: space-between; margin-bottom: 20px; }
+            .summary { margin-top: 20px; }
+            .total { font-weight: bold; font-size: 1.1em; }
+            .footer { text-align: center; margin-top: 30px; color: #666; }
+          </style>
+        </head>
+        <body>
+    `);
+
+    try {
+      for (const orderId of selectedOrders) {
+        const response = await fetch(`http://localhost:5000/api/orders/${orderId.substring(1)}`);
+        if (!response.ok) throw new Error(`Failed to fetch order ${orderId}`);
+        const order = await response.json();
+
+        const orderDate = new Date(order.orderDate).toLocaleDateString();
+        
+        printWindow.document.write(`
+          <div class="invoice">
+            <div class="header">
+              <h1>QuickCart</h1>
+              <h2>INVOICE</h2>
+              <p>Order #: ${order._id}</p>
+              <p>Date: ${orderDate}</p>
+              <hr/>
+            </div>
+
+            <div class="flex">
+              <div>
+                <h3>Customer Information</h3>
+                <p><strong>Name:</strong> ${order.shippingInfo?.fullName || 'N/A'}</p>
+                <p><strong>Email:</strong> ${order.shippingInfo?.email || 'N/A'}</p>
+                <p><strong>Phone:</strong> ${order.shippingInfo?.phone || 'N/A'}</p>
+              </div>
+              <div>
+                <h3>Shipping Information</h3>
+                <p><strong>Address:</strong> ${order.shippingInfo?.address || ''}, ${order.shippingInfo?.city || ''}, ${order.shippingInfo?.state || ''} ${order.shippingInfo?.zipCode || ''}</p>
+                <p><strong>Payment Method:</strong> ${order.paymentMethod || 'Not specified'}</p>
+                <p><strong>Status:</strong> ${order.status || 'Pending'}</p>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Product</th>
+                  <th>Size</th>
+                  <th>Price</th>
+                  <th>Qty</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${order.items.map((item, index) => `
+                  <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.name}</td>
+                    <td>${item.size}</td>
+                    <td>₹${item.price.toFixed(2)}</td>
+                    <td>${item.quantity}</td>
+                    <td>₹${(item.price * item.quantity).toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+
+            <div class="summary">
+              <table>
+                <tr>
+                  <td><strong>Subtotal:</strong></td>
+                  <td align="right">₹${order.subtotal.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td><strong>Delivery Fee:</strong></td>
+                  <td align="right">₹${order.deliveryFee.toFixed(2)}</td>
+                </tr>
+                <tr class="total">
+                  <td><strong>Total:</strong></td>
+                  <td align="right">₹${order.orderTotal.toFixed(2)}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div class="footer">
+              <p>Thank you for shopping with <strong>QuickCart</strong>!</p>
+            </div>
+          </div>
+        `);
+      }
+
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.print();
+    } catch (error) {
+      console.error('Error generating bulk print:', error);
+      toast.error('Failed to generate bulk print');
+      printWindow.close();
+    }
+  };
+
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      await updateOrderStatus(orderId.substring(1), newStatus.toLowerCase());
+      await queryClient.invalidateQueries(["orders"]);
+      toast.success('Order status updated successfully');
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   if (isLoading) return (
   <div className="p-6 space-y-4">
@@ -109,14 +286,25 @@ if (error) return (
               <span>Feb 16,2022 - Feb 20,2022</span>
             </div>
           </div>
-          <div className="ml-2">
-            <Button variant="outline" className="bg-white">
-              Change Status
-              <svg width="16" height="16" className="ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
-              </svg>
-            </Button>
-          </div>
+          {selectedOrders.length > 0 && (
+            <div className="flex items-center gap-2 ml-2">
+              <Select onValueChange={handleBulkStatusUpdate}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="Change Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Processing">Processing</SelectItem>
+                  <SelectItem value="Shipped">Shipped</SelectItem>
+                  <SelectItem value="Delivered">Delivered</SelectItem>
+                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" className="bg-white" onClick={handleBulkPrint}>
+                Print Selected
+              </Button>
+            </div>
+          )}
         </div>
       </div>
       
@@ -128,12 +316,15 @@ if (error) return (
           </button>
         </div>
         
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">
-                  <Checkbox />
+                  <Checkbox 
+                    checked={selectedOrders.length === ordersData.length}
+                    onCheckedChange={handleSelectAll}
+                  />
                 </TableHead>
                 <TableHead>Product</TableHead>
                 <TableHead>Order ID</TableHead>
@@ -147,7 +338,10 @@ if (error) return (
               {ordersData.map((order) => (
                 <TableRow key={order.id} className="hover:bg-gray-50 transition-colors duration-150">
                   <TableCell>
-                    <Checkbox />
+                    <Checkbox 
+                      checked={selectedOrders.includes(order.id)}
+                      onCheckedChange={(checked) => handleSelectOrder(order.id, checked)}
+                    />
                   </TableCell>
                   <TableCell>{order.product}</TableCell>
                   <TableCell>
@@ -158,7 +352,23 @@ if (error) return (
                   <TableCell>{order.date}</TableCell>
                   <TableCell>{order.customer}</TableCell>
                   <TableCell>
-                    <StatusBadge status={order.status} />
+                    <Select
+                      defaultValue={order.status}
+                      onValueChange={(value) => handleStatusChange(order.id, value)}
+                    >
+                      <SelectTrigger className="w-[130px]">
+                        <SelectValue>
+                          <StatusBadge status={order.status} />
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Processing">Processing</SelectItem>
+                        <SelectItem value="Shipped">Shipped</SelectItem>
+                        <SelectItem value="Delivered">Delivered</SelectItem>
+                        <SelectItem value="Cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell className="text-right">{order.amount}</TableCell>
                 </TableRow>
@@ -167,40 +377,6 @@ if (error) return (
           </Table>
         </div>
       </Card>
-      
-      <div className="flex justify-center mt-10 gap-2">
-        <Button 
-          variant="outline" 
-          className="w-8 h-8 p-0 rounded-md" 
-          disabled={page === 1}
-          onClick={() => setPage(p => Math.max(1, p - 1))}
-        >
-          &lt;
-        </Button>
-        
-        {Array.from({ length: Math.min(5, data?.totalPages || 1) }, (_, i) => {
-          const pageNum = i + 1;
-          return (
-            <Button
-              key={pageNum}
-              variant={pageNum === page ? "default" : "outline"}
-              className="w-8 h-8 p-0 rounded-md"
-              onClick={() => setPage(pageNum)}
-            >
-              {pageNum}
-            </Button>
-          );
-        })}
-        
-        <Button 
-          variant="outline" 
-          className="w-8 h-8 p-0 rounded-md" 
-          disabled={page === data?.totalPages}
-          onClick={() => setPage(p => Math.min(data?.totalPages || 1, p + 1))}
-        >
-          &gt;
-        </Button>
-      </div>
     </div>
   );
 };

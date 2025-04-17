@@ -122,12 +122,12 @@ const AddProductForm = ({ product = null, onSubmit = () => {}, categories = [] }
       file.size <= 5 * 1024 * 1024
     );
 
-    // Add new files to the beginning of the array
-    setSelectedFiles(prev => [...validFiles, ...prev]);
+    // Add new files to the end of the array to maintain sequence
+    setSelectedFiles(prev => [...prev, ...validFiles]);
     
-    // Add new previews to the beginning of the array
+    // Add new previews to the end of the array
     const newPreviews = validFiles.map(file => URL.createObjectURL(file));
-    setImagePreviews(prev => [...newPreviews, ...prev]);
+    setImagePreviews(prev => [...prev, ...newPreviews]);
   };
 
   const removeImage = (index) => {
@@ -153,11 +153,7 @@ const AddProductForm = ({ product = null, onSubmit = () => {}, categories = [] }
   const onFormSubmit = async (data) => {
     try {
       if (selectedFiles.length === 0 && !data.imageUrl && !product?.imageUrl) {
-        toast({
-          title: "Error",
-          description: "At least one product image is required",
-          variant: "destructive"
-        });
+        // Removed toast message for image requirement
         return;
       }
 

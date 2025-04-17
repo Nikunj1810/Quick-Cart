@@ -133,6 +133,13 @@ const AdminLogin = () => {
             LOGIN
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
+          <Button
+            type="button"
+            className="w-full bg-gray-200 hover:bg-gray-300 text-black font-semibold py-2 rounded flex items-center justify-center transition duration-200 mt-2"
+            onClick={() => navigate('/')}
+          >
+            Go to User Site
+          </Button>
         </form>
       </div>
     </div>

@@ -79,7 +79,9 @@ const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadsDir),
     filename: (req, file, cb) => {
         const ext = path.extname(file.originalname);
-        cb(null, Date.now() + ext);
+        // Ensure unique filenames by appending a random string
+        const uniqueSuffix = crypto.randomBytes(4).toString('hex');
+        cb(null, `${Date.now()}-${uniqueSuffix}${ext}`);
     }
 });
 const upload = multer({
@@ -353,7 +355,7 @@ app.get("/api/products", async (req, res) => {
 // Create a new product
 app.post("/api/products", upload.array("images", 5), async (req, res) => {
     try {
-        if (!req.files || req.files.length === 0) return res.status(400).json({ error: "At least one product image is required" });
+        if (!req.files || req.files.length === 0) return res.status(400).json;
 
         const productData = JSON.parse(req.body.product);
         productData.isNewArrival = productData.isNewArrival || false;

@@ -55,6 +55,18 @@ const AboutUs = () => {
             <p className="mb-4">
               We're just getting started, and we're excited to have you along for the ride. Whether you're a first-time customer or a loyal shopper, we're committed to making your QuickCart experience better every day.
             </p>
+
+            {/* --- Terms & Conditions Summary Section --- */}
+            <h2 id="terms-and-conditions" className="text-2xl font-semibold mt-12 mb-4">Terms & Conditions (Summary)</h2>
+            <ul className="list-disc pl-6 mb-4">
+              <li className="mb-2">All orders are subject to availability and confirmation of payment.</li>
+              <li className="mb-2">Returns are accepted within 7 days in original condition.</li>
+              <li className="mb-2">Shipping times may vary based on location and logistics.</li>
+              <li className="mb-2">Your use of this site signifies agreement to our full Terms & Conditions.</li>
+            </ul>
+            <p className="mb-8">
+              Read the full <a href="/terms" className="text-blue-600 underline">Terms and Conditions</a> for more details.
+            </p>
           </div>
         </div>
       </div>

@@ -16,7 +16,7 @@ const Home = () => {
         const response = await fetch("http://localhost:5000/api/products?isNewArrival=true");
         if (!response.ok) throw new Error("Failed to fetch new arrivals");
         const data = await response.json();
-        setNewArrivals(data.products);
+        setNewArrivals(data.products.slice(0, 8));
       } catch (error) {
         console.error("Error fetching new arrivals:", error);
       }
@@ -36,7 +36,8 @@ const Home = () => {
         if (!response.ok)
           throw new Error("Failed to fetch top selling products");
         const data = await response.json();
-        setTopSelling(data.products);
+        const shuffledProducts = data.products.sort(() => 0.5 - Math.random());
+        setTopSelling(shuffledProducts.slice(0, 8));
       } catch (error) {
         console.error("Error fetching top selling products:", error);
       }

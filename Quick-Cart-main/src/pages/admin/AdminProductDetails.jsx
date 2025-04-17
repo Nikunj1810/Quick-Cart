@@ -6,6 +6,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // ✅ Helpers
 const BASE_URL = "http://localhost:5000";
@@ -128,9 +138,29 @@ const AdminProductDetails = () => {
 
   const handleProductDelete = async () => {
     try {
-      await deleteProduct(productId);
-      toast.success("Product deleted successfully");
-      navigate("/admin/products");
+      const confirmDelete = await toast.promise(
+        new Promise((resolve, reject) => {
+          toast(
+            "Are you sure you want to delete this product?",
+            {
+              action: {
+                text: "Confirm",
+                onClick: () => resolve(true),
+              },
+              cancel: {
+                text: "Cancel",
+                onClick: () => reject(false),
+              },
+            }
+          );
+        })
+      );
+
+      if (confirmDelete) {
+        await deleteProduct(productId);
+        toast.success("Product deleted successfully");
+        navigate("/admin/products");
+      }
     } catch (err) {
       toast.error(err.message || "Failed to delete product.");
     }

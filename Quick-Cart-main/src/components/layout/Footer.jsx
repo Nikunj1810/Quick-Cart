@@ -4,8 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Twitter, Facebook, Instagram, Github } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { useUser } from "@/context/UserContext";
 
 const Footer = () => {
+  const { isAuthenticated } = useUser();
+
   const handleSubscribe = (e) => {
     e.preventDefault();
     toast({
@@ -83,7 +86,7 @@ const Footer = () => {
           <div>
             <h3 className="mb-4 text-sm font-medium uppercase">COMPANY</h3>
             <ul className="space-y-2">
-              <li><Link to="/about" className="text-gray-600 hover:text-black">About</Link></li>
+              <li><Link to="/about-us" className="text-gray-600 hover:text-black">About</Link></li>
               <li><Link to="/features" className="text-gray-600 hover:text-black">Features</Link></li>
               <li><Link to="/works" className="text-gray-600 hover:text-black">Works</Link></li>
               <li><Link to="/career" className="text-gray-600 hover:text-black">Career</Link></li>
@@ -93,9 +96,9 @@ const Footer = () => {
           <div>
             <h3 className="mb-4 text-sm font-medium uppercase">HELP</h3>
             <ul className="space-y-2">
-              <li><Link to="/support" className="text-gray-600 hover:text-black">Customer Support</Link></li>
+              <li><Link to="/contact-us" className="text-gray-600 hover:text-black">Customer Support</Link></li>
               <li><Link to="/delivery" className="text-gray-600 hover:text-black">Delivery Details</Link></li>
-              <li><Link to="/terms" className="text-gray-600 hover:text-black">Terms & Conditions</Link></li>
+              <li><Link to="/about-us#terms-and-conditions" className="text-gray-600 hover:text-black">Terms & Conditions</Link></li>
               <li><Link to="/privacy" className="text-gray-600 hover:text-black">Privacy Policy</Link></li>
             </ul>
           </div>
@@ -103,9 +106,9 @@ const Footer = () => {
           <div>
             <h3 className="mb-4 text-sm font-medium uppercase">FAQ</h3>
             <ul className="space-y-2">
-              <li><Link to="/account" className="text-gray-600 hover:text-black">Account</Link></li>
+              <li><Link to={isAuthenticated ? "/profile" : "/login"} className="text-gray-600 hover:text-black">Account</Link></li>
               <li><Link to="/deliveries" className="text-gray-600 hover:text-black">Manage Deliveries</Link></li>
-              <li><Link to="/orders" className="text-gray-600 hover:text-black">Orders</Link></li>
+              <li><Link to={isAuthenticated ? "/user/orders" : "/login"} className="text-gray-600 hover:text-black">Delivery Details</Link></li>
               <li><Link to="/payments" className="text-gray-600 hover:text-black">Payments</Link></li>
             </ul>
           </div>

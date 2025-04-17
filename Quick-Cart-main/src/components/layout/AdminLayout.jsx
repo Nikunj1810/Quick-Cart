@@ -14,7 +14,7 @@ import {
 const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { admin, logout, isAuthenticated } = useAdmin();
+  const {  logout, isAuthenticated } = useAdmin();
 
   if (!isAuthenticated) {
     navigate("/admin/login");
@@ -79,27 +79,9 @@ const AdminLayout = () => {
           </Link>
         </div>
 
-        <div className="mt-6">
-          <h3 className="text-xs font-medium px-4 py-2 text-gray-500">Categories</h3>
-          <div className="flex flex-col">
-            <div className="flex items-center justify-between px-4 py-2 text-sm">
-              <span>Lorem Ipsum</span>
-              <span className="bg-gray-200 px-2 py-0.5 text-xs rounded-md">21</span>
-            </div>
-            <div className="flex items-center justify-between px-4 py-2 text-sm">
-              <span>T-shirt</span>
-              <span className="bg-gray-200 px-2 py-0.5 text-xs rounded-md">32</span>
-            </div>
-            <div className="flex items-center justify-between px-4 py-2 text-sm">
-              <span>Paint</span>
-              <span className="bg-gray-200 px-2 py-0.5 text-xs rounded-md">13</span>
-            </div>
-            <div className="flex items-center justify-between px-4 py-2 text-sm">
-              <span>Jeans</span>
-              <span className="bg-gray-200 px-2 py-0.5 text-xs rounded-md">14</span>
-            </div>
-          </div>
-        </div>
+       
+          
+        
       </aside>
 
       {/* Main Content */}

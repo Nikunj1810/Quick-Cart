@@ -93,7 +93,9 @@ const ContactUs = () => {
                   <Phone className="h-6 w-6 text-blue-600 mt-1" />
                   <div>
                     <h3 className="font-medium">Phone</h3>
-                    <p className="text-gray-600">(123) 456-7890</p>
+                    <p className="text-gray-600">7283952837</p>
+                    <p className="text-gray-600">9157314118</p>
+
                   </div>
                 </div>
 
@@ -101,7 +103,7 @@ const ContactUs = () => {
                   <Mail className="h-6 w-6 text-blue-600 mt-1" />
                   <div>
                     <h3 className="font-medium">Email</h3>
-                    <p className="text-gray-600">support@quickcart.com</p>
+                    <p className="text-gray-600">quickcartservice118@gmail.com</p>
                   </div>
                 </div>
               </div>

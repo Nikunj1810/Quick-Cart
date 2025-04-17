@@ -196,28 +196,40 @@ const ProductDetail = () => {
           <div className="space-y-6">
             <h1 className="text-4xl font-bold">{product.name}</h1>
             
-            <div className="text-3xl font-bold">
-              {formatIndianRupee(product.price)}
+            <div className="space-y-2 bg-gray-50 p-4 rounded-lg">
+              <div className="flex items-center gap-4">
+                <span className="text-4xl font-bold text-black/90">{formatIndianRupee(product.price)}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg text-gray-500 line-through">{formatIndianRupee(product.originalPrice)}</span>
+                  <span className="text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">{product.discountPercentage}% off</span>
+                </div>
+              </div>
             </div>
-            
             <div className="text-gray-600">
               <p>{product.description}</p>
             </div>
             
             {product.sizes?.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="font-medium text-lg">Choose Size</h3>
+              <div className="space-y-3">
+                <h3 className="font-medium text-lg flex items-center gap-2">
+                  Choose Size
+                </h3>
                 <div className="flex flex-wrap gap-3">
                   {product.sizes.map((sizeObj) => (
                     <button
                       key={sizeObj._id}
-                      className={`px-4 py-2 rounded-md border 
-                        ${selectedSize === sizeObj.size ? "bg-black text-white" : "bg-gray-100 hover:bg-gray-200"}
-                        ${sizeObj.quantity === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+                      className={`px-6 py-3 rounded-xl border-2 transition-all duration-200
+                        ${selectedSize === sizeObj.size 
+                          ? "border-black bg-black text-white transform scale-105" 
+                          : "border-gray-200 hover:border-gray-400 bg-white"}
+                        ${sizeObj.quantity === 0 ? "opacity-50 cursor-not-allowed bg-gray-50" : ""}`}
                       onClick={() => setSelectedSize(sizeObj.size)}
                       disabled={sizeObj.quantity === 0}
                     >
                       {sizeObj.size}
+                      {sizeObj.quantity === 0 && (
+                        <span className="block text-xs mt-1 text-gray-500">Out of stock</span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -225,9 +237,9 @@ const ProductDetail = () => {
             )}
 
             <div className="flex items-center gap-4">
-              <div className="flex items-center border rounded-md">
+              <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden hover:border-gray-300 transition-colors">
                 <button
-                  className="p-3 hover:bg-gray-100"
+                  className="p-3 hover:bg-gray-50 transition-colors"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 >
                   <Minus className="w-4 h-4" />
@@ -239,7 +251,7 @@ const ProductDetail = () => {
                   readOnly
                 />
                 <button
-                  className="p-3 hover:bg-gray-100"
+                  className="p-3 hover:bg-gray-50 transition-colors"
                   onClick={() => setQuantity(quantity + 1)}
                 >
                   <Plus className="w-4 h-4" />
@@ -247,11 +259,19 @@ const ProductDetail = () => {
               </div>
               
               <button
-  onClick={handleAddToCart}
-  className="flex-1 bg-black text-white py-3 px-6 rounded-2xl hover:bg-black/90 transition-colors"
->
-  Add to Cart
-</button>
+                onClick={handleAddToCart}
+                className="flex-1 bg-black text-white py-4 px-6 rounded-2xl hover:bg-black/90 transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Adding to cart...
+                  </div>
+                ) : (
+                  "Add to Cart"
+                )}
+              </button>
             </div>
 
             {/* Brand section */}

@@ -15,6 +15,7 @@ const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [sortBy, setSortBy] = useState('name');
+  const [searchQuery, setSearchQuery] = useState("");
 
 
   const [categories, setCategories] = useState([]);
@@ -106,6 +107,32 @@ const Shop = () => {
     });
   };
 
+  const handleSearchChange = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+    setSearchParams(params => {
+      params.set('search', query);
+      return params;
+    });
+  
+    const filteredProducts = products.filter(product =>
+      product.name.toLowerCase().includes(query) ||
+      product.brand.toLowerCase().includes(query)
+    );
+    setProducts(filteredProducts);
+  };
+
+  useEffect(() => {
+    const searchParam = searchParams.get('search');
+    if (searchParam) {
+      const filteredProducts = products.filter(product =>
+        product.name.toLowerCase().includes(searchParam) ||
+        product.brand.toLowerCase().includes(searchParam)
+      );
+      setProducts(filteredProducts);
+    }
+  }, [searchParams.get('search'), products]);
+
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -121,9 +148,13 @@ const Shop = () => {
                   category ? `${category} Collection` : "All Products"}
               </h1>
               <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-500">
-                  {products.length} products
-                </p>
+                <Input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  className="border border-gray-300 rounded px-4 py-2 text-sm"
+                />
                 <select
                   value={sortBy}
                   onChange={handleSortChange}

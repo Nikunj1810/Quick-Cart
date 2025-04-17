@@ -328,10 +328,10 @@ app.delete('/api/cart/:userId', async (req, res) => {
 // Get all products with optional filtering, sorting, and pagination
 app.get("/api/products", async (req, res) => {
     try {
-        const { category, brand, gender, minPrice, maxPrice, sortBy = 'createdAt', sortOrder = 'desc', newArrivals } = req.query;
+        const { category, brand, gender, minPrice, maxPrice, sortBy = 'createdAt', sortOrder = 'desc', isNewArrival } = req.query;
         
         const filter = {};
-        if (newArrivals) filter.isNewArrival = true;
+        if (isNewArrival === 'true') filter.isNewArrival = true;
         if (category) filter.category = category;
         if (brand) filter.brand = brand;
         if (gender) filter.gender = gender;
@@ -344,7 +344,7 @@ app.get("/api/products", async (req, res) => {
         const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
         const products = await ProductModel.find(filter).sort(sort);
         
-        res.json(products);
+        res.json({ products });
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch products", details: error.message });
     }

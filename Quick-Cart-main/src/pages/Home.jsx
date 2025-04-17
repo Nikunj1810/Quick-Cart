@@ -13,7 +13,7 @@ const Home = () => {
   useEffect(() => {
     const fetchNewArrivals = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/products?isNewArrival=true&limit=10");
+        const response = await fetch("http://localhost:5000/api/products?isNewArrival=true");
         if (!response.ok) throw new Error("Failed to fetch new arrivals");
         const data = await response.json();
         setNewArrivals(data.products);
@@ -147,10 +147,10 @@ const Home = () => {
             New Arrivals
           </h1>
           <div className="relative">
-            <div className="overflow-x-auto scrollbar-hide" style={{ scrollBehavior: 'smooth' }}>
-              <div className="flex gap-6 pb-4" style={{ minWidth: 'min-content' }}>
+            <div className="overflow-x-auto scrollbar-hide" style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}>
+              <div className="flex gap-6 pb-4" style={{ minWidth: 'max-content' }}>
                 {newArrivals.map((product) => (
-                  <div key={product.id} className="w-[280px] flex-shrink-0">
+                  <div key={product.id} className="w-[280px] flex-shrink-0 snap-start">
                     <ProductCard product={product} />
                   </div>
                 ))}

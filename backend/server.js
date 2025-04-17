@@ -315,7 +315,7 @@ app.delete('/api/cart/:userId', async (req, res) => {
     }
 
     cart.items = [];
-    cart.updatedAt = new Date();
+    cart.updatedAt = Date.now();
     await cart.save();
     res.json(cart);
   } catch (error) {
@@ -356,7 +356,8 @@ app.post("/api/products", upload.array("images", 5), async (req, res) => {
         if (!req.files || req.files.length === 0) return res.status(400).json({ error: "At least one product image is required" });
 
         const productData = JSON.parse(req.body.product);
-        
+        productData.isNewArrival = productData.isNewArrival || false;
+
         // Create array of image paths
         const imagePaths = req.files.map(file => `/uploads/${file.filename}`);
 
@@ -374,7 +375,8 @@ app.post("/api/products", upload.array("images", 5), async (req, res) => {
             sizeType: productData.sizeType || "standard",
             sizes: Array.isArray(productData.sizes) ? productData.sizes : [],
             images: imagePaths,
-            imageUrl: imagePaths[0] // Set first image as main imageUrl for backward compatibility
+            imageUrl: imagePaths[0], // Set first image as main imageUrl for backward compatibility
+            isNewArrival: productData.isNewArrival
         });
 
         await product.save();
@@ -418,6 +420,16 @@ app.put("/api/products/:id", upload.array("images", 5), async (req, res) => {
             // Create array of new image paths
             const newImagePaths = req.files.map(file => `/uploads/${file.filename}`);
             
+            // Handle existing images from the frontend
+            let existingImages = [];
+            if (req.body.existingImages) {
+                try {
+                    existingImages = JSON.parse(req.body.existingImages);
+                } catch (err) {
+                    console.error('Error parsing existing images:', err);
+                }
+            }
+            
             // If replacing all images
             if (updates.replaceAllImages) {
                 // Delete old images if they exist
@@ -431,8 +443,8 @@ app.put("/api/products/:id", upload.array("images", 5), async (req, res) => {
                 }
                 updates.images = newImagePaths;
             } else {
-                // Add new images to existing ones
-                updates.images = [...(product.images || []), ...newImagePaths];
+                // Add new images to the beginning, followed by existing images
+                updates.images = [...newImagePaths, ...existingImages];
             }
             
             // Update main imageUrl for backward compatibility

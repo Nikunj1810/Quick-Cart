@@ -122,10 +122,12 @@ const AddProductForm = ({ product = null, onSubmit = () => {}, categories = [] }
       file.size <= 5 * 1024 * 1024
     );
 
-    setSelectedFiles(prev => [...prev, ...validFiles]);
+    // Add new files to the beginning of the array
+    setSelectedFiles(prev => [...validFiles, ...prev]);
     
+    // Add new previews to the beginning of the array
     const newPreviews = validFiles.map(file => URL.createObjectURL(file));
-    setImagePreviews(prev => [...prev, ...newPreviews]);
+    setImagePreviews(prev => [...newPreviews, ...prev]);
   };
 
   const removeImage = (index) => {
@@ -169,9 +171,16 @@ const AddProductForm = ({ product = null, onSubmit = () => {}, categories = [] }
       };
 
       const formData = new FormData();
+      // Append files in reverse order to maintain the order of newly added images first
       selectedFiles.forEach((file) => {
         formData.append('images', file);
       });
+      
+      // Add existing image URLs to maintain their order
+      if (imagePreviews.length > selectedFiles.length) {
+        const existingImages = imagePreviews.slice(selectedFiles.length);
+        formData.append('existingImages', JSON.stringify(existingImages));
+      }
       
       // Format data differently for create vs update
       if (product) {

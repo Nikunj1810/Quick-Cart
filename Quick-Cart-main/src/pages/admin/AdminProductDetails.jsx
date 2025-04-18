@@ -1,239 +1,182 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import ProductForm from "@/components/admin/product/ProductForm";
-import CategoryManager from "@/components/admin/product/CategoryManager";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { formatIndianRupee } from "@/utils/currency";
+import { Button } from "@/components/ui/button";
+import { Pencil, Trash2, Loader2 } from "lucide-react";
+import { useAdmin } from "@/context/AdminContext";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import ProductCard from "@/components/product/ProductCard";
 
-// ✅ Helpers
-const BASE_URL = "http://localhost:5000";
-
-const removeBaseUrl = (url) => url?.replace(/^https?:\/\/[^/]+/, "") || "";
-
-// ✅ Services
-const getAllCategories = async () => {
-  const res = await fetch(`${BASE_URL}/api/categories`);
-  if (!res.ok) throw new Error((await res.json()).error || "Failed to fetch categories");
-  return res.json();
-};
-
-const getProduct = async (id) => {
-  const res = await fetch(`${BASE_URL}/api/products/${id}`);
-  if (!res.ok) throw new Error((await res.json()).error || "Failed to fetch product");
-  const product = await res.json();
-  product.imageUrl = product.imageUrl ? (product.imageUrl.startsWith("http") ? product.imageUrl : `${BASE_URL}${product.imageUrl}`) : "";
-  product.checked = product.checked || false;
-  return product;
-};
-
-const createProduct = async (product, imageFile) => {
-  const formData = new FormData();
-  if (imageFile) formData.append("image", imageFile);
-  formData.append("product", JSON.stringify(product));
-
-  const res = await fetch(`${BASE_URL}/api/products`, {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!res.ok) throw new Error((await res.json()).error || "Failed to create product");
-  return res.json();
-};
-
-const updateProduct = async (id, updates, imageFile) => {
-  const formData = new FormData();
-  if (imageFile) {
-    formData.append("image", imageFile);
-  } else if (updates.imageUrl || updates.existingImageUrl) {
-    formData.append("imageUrl", removeBaseUrl(updates.imageUrl || updates.existingImageUrl));
-  }
-
-  formData.append("updates", JSON.stringify(updates));
-
-  const res = await fetch(`${BASE_URL}/api/products/${id}`, {
-    method: "PUT",
-    body: formData,
-  });
-
-  if (!res.ok) throw new Error((await res.json()).error || "Failed to update product");
-  const updatedProduct = await res.json();
-  updatedProduct.imageUrl = updatedProduct.imageUrl ? (updatedProduct.imageUrl.startsWith("http") ? updatedProduct.imageUrl : `${BASE_URL}${updatedProduct.imageUrl}`) : "";
-  return updatedProduct;
-};
-
-const deleteProduct = async (id) => {
-  const res = await fetch(`${BASE_URL}/api/products/${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error((await res.json()).error || "Failed to delete product");
-};
-
-const toggleProductChecked = async (id) => {
-  const res = await fetch(`${BASE_URL}/api/products/${id}/toggle`, { method: "PUT" });
-  if (!res.ok) throw new Error((await res.json()).error || "Failed to toggle product status");
-  return res.json();
-};
-
-// ✅ Main Component
 const AdminProductDetails = () => {
   const { productId } = useParams();
-  const isNewProduct = !productId || productId === "new";
   const navigate = useNavigate();
+  const { isAuthenticated: isAdmin } = useAdmin();
 
-  const [product, setProduct] = useState();
-  const [categories, setCategories] = useState([]);
+  const [product, setProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchProduct = async () => {
+      if (!productId) return;
+
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-        const [cats, prod] = await Promise.all([
-          getAllCategories(),
-          isNewProduct ? Promise.resolve(undefined) : getProduct(productId),
-        ]);
-        setCategories(cats);
-        if (prod) setProduct(prod);
-        else if (!isNewProduct) {
-          toast.error("Product not found");
-          navigate("/admin/products");
-        }
-      } catch (err) {
-        toast.error(err.message || "Something went wrong.");
+        const response = await fetch(`http://localhost:5000/api/products/${productId}`);
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.error || "Product not found");
+        setProduct(data);
+      } catch (error) {
+        console.error("Error fetching product:", error);
+        toast.error(error.message || "Product not found");
       } finally {
         setIsLoading(false);
       }
     };
-    fetchInitialData();
-  }, [productId, isNewProduct, navigate]);
 
-  const handleProductSubmit = async (data, imageFile) => {
-    try {
-      if (isNewProduct) {
-        const newProd = await createProduct(data, imageFile);
-        toast.success("Product created successfully");
-        navigate(`/admin/products/${newProd._id}`);
-      } else {
-        const updated = await updateProduct(productId, {
-          ...data,
-          existingImageUrl: product?.imageUrl,
-        }, imageFile);
-        setProduct(updated);
-        toast.success("Product updated successfully");
-      }
-    } catch (err) {
-      toast.error(err.message || "Failed to save product.");
-    }
-  };
+    fetchProduct();
+  }, [productId]);
 
-  const handleProductDelete = async () => {
-    try {
-      const confirmDelete = await toast.promise(
-        new Promise((resolve, reject) => {
-          toast(
-            "Are you sure you want to delete this product?",
-            {
-              action: {
-                text: "Confirm",
-                onClick: () => resolve(true),
-              },
-              cancel: {
-                text: "Cancel",
-                onClick: () => reject(false),
-              },
-            }
-          );
-        })
-      );
-
-      if (confirmDelete) {
-        await deleteProduct(productId);
+  const handleDeleteProduct = async () => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/products/${productId}`,
+          { method: "DELETE" }
+        );
+        if (!response.ok) throw new Error("Failed to delete product");
         toast.success("Product deleted successfully");
         navigate("/admin/products");
+      } catch (error) {
+        toast.error(error.message || "Failed to delete product");
       }
-    } catch (err) {
-      toast.error(err.message || "Failed to delete product.");
     }
   };
 
-  const handleToggleChecked = async () => {
-    try {
-      const updated = await toggleProductChecked(productId);
-      setProduct(updated);
-      toast.success(`${updated.name} has been ${updated.checked ? "added to" : "removed from"} checked products`);
-    } catch (err) {
-      toast.error(err.message || "Failed to toggle product.");
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-16 text-center">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+        <p>Loading product details...</p>
+      </div>
+    );
+  }
 
-  if (isLoading) return <div className="p-6">Loading...</div>;
+  if (!product) {
+    return (
+      <div className="container mx-auto py-16 text-center">
+        <h1 className="text-3xl font-bold mb-4">Product Not Found</h1>
+        <Button onClick={() => navigate("/admin/products")}>Back to Products</Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold mb-1">Product Details</h1>
-          <div className="text-sm text-gray-500">
-            <Link to="/admin/dashboard" className="hover:underline">Home</Link> &gt;{" "}
-            <Link to="/admin/products" className="hover:underline">All Products</Link> &gt;{" "}
-            {isNewProduct ? "Add New Product" : "Edit Product"}
+    <div className="container mx-auto py-8 px-4">
+      {/* Breadcrumb */}
+      <div className="mb-6 flex items-center gap-2 text-gray-500">
+        <Link to="/admin/products" className="hover:text-gray-700">Products</Link>
+        <span>›</span>
+        <span className="text-gray-700">{product.name}</span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Left Side - Image Gallery */}
+        <div className="space-y-4">
+          <div className="relative h-[400px] w-full rounded-lg overflow-hidden bg-gray-100">
+            <img
+              src={`http://localhost:5000${product.images && product.images.length > 0 ? product.images[0] : product.imageUrl}`}
+              alt={product.name}
+              className="w-full h-full object-contain"
+              id="main-product-image"
+            />
+          </div>
+          
+          <div className="grid grid-cols-4 gap-4">
+            {product.images && product.images.length > 0 ? (
+              product.images.map((image, index) => (
+                <div 
+                  key={index} 
+                  className="h-24 border rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors"
+                  onClick={() => {
+                    document.getElementById('main-product-image').src = `http://localhost:5000${image}`;
+                  }}
+                >
+                  <img
+                    src={`http://localhost:5000${image}`}
+                    alt={`${product.name} - Image ${index + 1}`}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              ))
+            ) : (
+              <div className="h-24 border rounded-lg overflow-hidden cursor-pointer">
+                <img
+                  src={`http://localhost:5000${product.imageUrl}`}
+                  alt={product.name}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
           </div>
         </div>
 
-        {!isNewProduct && product && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm mr-2">Mark as checked:</span>
-            <Checkbox
-              checked={product.checked}
-              onCheckedChange={handleToggleChecked}
-              className="data-[state=checked]:bg-green-500 border-gray-300"
-            />
+        {/* Right Side - Product Details */}
+        <div className="space-y-6">
+          <h1 className="text-4xl font-bold">{product.name}</h1>
+          
+          <div className="space-y-2 bg-gray-50 p-4 rounded-lg">
+            <div className="flex items-center gap-4">
+              <span className="text-4xl font-bold text-black/90">{formatIndianRupee(product.price)}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-lg text-gray-500 line-through">{formatIndianRupee(product.originalPrice)}</span>
+                <span className="text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">{product.discountPercentage}% off</span>
+              </div>
+            </div>
           </div>
-        )}
+
+          <div className="text-gray-600">
+            <p>{product.description}</p>
+          </div>
+          
+          {product.sizes?.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="font-medium text-lg">Available Sizes</h3>
+              <div className="flex flex-wrap gap-3">
+                {product.sizes.map((sizeObj) => (
+                  <div
+                    key={sizeObj._id}
+                    className="px-6 py-3 rounded-xl border-2 border-gray-200 bg-white"
+                  >
+                    <div>{sizeObj.size}</div>
+                    <div className="text-xs text-gray-500 mt-1">Stock: {sizeObj.quantity}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Brand section */}
+          {product.brand && (
+            <div className="pt-4 border-t">
+              <h3 className="font-medium text-lg mb-2">Brand</h3>
+              <p className="text-gray-700">{product.brand}</p>
+            </div>
+          )}
+
+          {/* Admin Options */}
+          {isAdmin && (
+            <div className="flex gap-6 pt-4 border-t">
+              <Link to={`/admin/products/${productId}/edit`} className="text-blue-600 hover:text-blue-800 flex items-center gap-2">
+                <Pencil className="w-5 h-5" /> Edit Product
+              </Link>
+              <button onClick={handleDeleteProduct} className="text-red-600 hover:text-red-800 flex items-center gap-2">
+                <Trash2 className="w-5 h-5" /> Delete Product
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-
-      <Tabs defaultValue="product" className="w-full">
-        <TabsList>
-          <TabsTrigger value="product">Product Details</TabsTrigger>
-          <TabsTrigger value="categories">Manage Categories</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="product" className="mt-6">
-          <Card>
-            <CardContent className="pt-6">
-              <ProductForm
-                product={product}
-                onSubmit={handleProductSubmit}
-                onDelete={!isNewProduct ? handleProductDelete : undefined}
-                categories={categories}
-                isNew={isNewProduct}
-                existingImageUrl={product?.imageUrl}
-                labels={{
-                  name: "Product Name",
-                  description: "Product Description",
-                  price: "Product Price",
-                  category: "Product Category",
-                  image: "Product Image",
-                }}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="categories" className="mt-6">
-          <CategoryManager />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };

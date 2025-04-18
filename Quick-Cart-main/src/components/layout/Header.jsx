@@ -27,7 +27,7 @@ import {
 const Header = () => {
   const navigate = useNavigate();
   const { cartCount } = useCart();
-  const { isAuthenticated, user, logout } = useUser(); // Now includes user and logout
+  const { isAuthenticated,  logout } = useUser(); // Now includes user and logout
   const { isAuthenticated: isAdminAuthenticated } = useAdmin();
   const [showPromo, setShowPromo] = useState(true);
   const [showSearch, setShowSearch] = useState(false);
@@ -100,20 +100,6 @@ const Header = () => {
               >
                 Contact Us
               </Link>
-
-              {/* Remove the login button from here */}
-
-              {isAdminAuthenticated && (
-                <Button
-                  onClick={handleAdminDashboard}
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 text-blue-700 border-blue-700 hover:bg-blue-50"
-                >
-                  <LayoutDashboard className="h-4 w-4" />
-                  Admin Dashboard
-                </Button>
-              )}
             </nav>
           </div>
 
@@ -266,15 +252,6 @@ const Header = () => {
                   >
                     Contact Us
                   </Link>
-                  {isAdminAuthenticated && (
-                    <Link
-                      to="/admin/dashboard"
-                      className="flex items-center gap-2 text-lg font-medium text-blue-700"
-                    >
-                      <LayoutDashboard className="h-5 w-5" />
-                      Admin Dashboard
-                    </Link>
-                  )}
                 </div>
               </SheetContent>
             </Sheet>

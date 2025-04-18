@@ -4,7 +4,7 @@ import { isLoggedIn } from "@/utils/auth";
 import { formatIndianRupee } from "@/utils/currency";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Minus, Plus, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCart } from "@/context/CartContext";
-import { useAdmin } from "@/context/AdminContext";
 import { toast } from "sonner";
 import ProductCard from "@/components/product/ProductCard";
 
@@ -22,7 +21,6 @@ const ProductDetail = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const { isAuthenticated: isAdmin } = useAdmin();
 
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState(null);
@@ -96,22 +94,6 @@ const ProductDetail = () => {
       toast.error(error.message || "Failed to add item to cart");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleDeleteProduct = async () => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      try {
-        const response = await fetch(
-          `http://localhost:5000/api/products/${productId}`,
-          { method: "DELETE" }
-        );
-        if (!response.ok) throw new Error("Failed to delete product");
-        toast.success("Product deleted successfully");
-        navigate("/admin/products");
-      } catch (error) {
-        toast.error(error.message || "Failed to delete product");
-      }
     }
   };
 
@@ -279,18 +261,6 @@ const ProductDetail = () => {
               <div className="pt-4 border-t">
                 <h3 className="font-medium text-lg mb-2">Brand</h3>
                 <p className="text-gray-700">{product.brand}</p>
-              </div>
-            )}
-
-            {/* Admin Options */}
-            {isAdmin && (
-              <div className="flex gap-6 pt-4 border-t">
-                <Link to={`/admin/products/${productId}`} className="text-blue-600 hover:text-blue-800">
-                  <Pencil className="w-5 h-5" /> Edit Product
-                </Link>
-                <button onClick={handleDeleteProduct} className="text-red-600 hover:text-red-800">
-                  <Trash2 className="w-5 h-5" /> Delete Product
-                </button>
               </div>
             )}
           </div>

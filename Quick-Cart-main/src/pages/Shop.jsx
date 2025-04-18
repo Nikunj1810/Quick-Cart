@@ -2,15 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import ProductGrid from "@/components/product/ProductGrid";
-import { useAdmin } from "@/context/AdminContext";
 import ProductFilterSidebar from "@/components/product/ProductFilterSidebar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import AdminQuickAccess from "@/components/admin/AdminQuickAccess";
-
 const Shop = () => {
   const { category } = useParams();
-  const { isAuthenticated: isAdminAuthenticated } = useAdmin();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
@@ -136,8 +132,7 @@ const Shop = () => {
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {isAdminAuthenticated && <AdminQuickAccess />}
-        
+
         <div className="flex flex-col md:flex-row gap-6">
           <ProductFilterSidebar categories={categories} />
           <div className="flex-1">

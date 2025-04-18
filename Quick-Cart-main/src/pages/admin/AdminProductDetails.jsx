@@ -1,41 +1,53 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { formatIndianRupee } from "@/utils/currency";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, Loader2 } from "lucide-react";
 import { useAdmin } from "@/context/AdminContext";
 import { toast } from "sonner";
 import ProductCard from "@/components/product/ProductCard";
+import ProductForm from "@/components/admin/product/ProductForm";
 
 const AdminProductDetails = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated: isAdmin } = useAdmin();
 
   const [product, setProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
+  
+  const isEditMode = location.pathname.endsWith('/edit');
+  const isNewProduct = location.pathname.endsWith('/new');
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      if (!productId) return;
-
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`http://localhost:5000/api/products/${productId}`);
-        const data = await response.json();
+        // Fetch categories
+        const categoriesResponse = await fetch('http://localhost:5000/api/categories');
+        const categoriesData = await categoriesResponse.json();
+        setCategories(categoriesData);
 
-        if (!response.ok) throw new Error(data.error || "Product not found");
-        setProduct(data);
+        // Fetch product if editing existing product
+        if (productId && !isNewProduct) {
+          const productResponse = await fetch(`http://localhost:5000/api/products/${productId}`);
+          const productData = await productResponse.json();
+
+          if (!productResponse.ok) throw new Error(productData.error || "Product not found");
+          setProduct(productData);
+        }
       } catch (error) {
-        console.error("Error fetching product:", error);
-        toast.error(error.message || "Product not found");
+        console.error("Error fetching data:", error);
+        toast.error(error.message || "Failed to load data");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProduct();
-  }, [productId]);
+    fetchData();
+  }, [productId, isNewProduct]);
 
   const handleDeleteProduct = async () => {
     if (window.confirm("Are you sure you want to delete this product?")) {
@@ -62,11 +74,31 @@ const AdminProductDetails = () => {
     );
   }
 
-  if (!product) {
+  if (!isLoading && !product && !isNewProduct) {
     return (
       <div className="container mx-auto py-16 text-center">
         <h1 className="text-3xl font-bold mb-4">Product Not Found</h1>
         <Button onClick={() => navigate("/admin/products")}>Back to Products</Button>
+      </div>
+    );
+  }
+
+  if (isNewProduct || isEditMode) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="mb-6 flex items-center gap-2 text-gray-500">
+          <Link to="/admin/products" className="hover:text-gray-700">Products</Link>
+          <span>›</span>
+          <span className="text-gray-700">{isNewProduct ? 'New Product' : 'Edit Product'}</span>
+        </div>
+        <div className="max-w-3xl mx-auto">
+          <h1 className="text-2xl font-bold mb-6">{isNewProduct ? 'Add New Product' : 'Edit Product'}</h1>
+          <ProductForm 
+            product={product} 
+            categories={categories}
+            onSubmit={() => navigate('/admin/products')}
+          />
+        </div>
       </div>
     );
   }

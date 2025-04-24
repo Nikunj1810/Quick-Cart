@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import AProductCard from "@/components/product/AProductCard";
+import { toast } from "@/components/ui/use-toast";
+
 const BASE_URL = "http://localhost:5000";
 
 const getAllProducts = async () => {
@@ -23,7 +25,6 @@ const getAllProducts = async () => {
     throw error;
   }
 };
-import { toast } from "@/components/ui/use-toast";
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
@@ -52,7 +53,7 @@ const AdminProducts = () => {
     fetchProducts();
     
     return () => {
-      // Cleanup function to cancel pending requests if component unmounts
+      // Cleanup if needed
     };
   }, []);
 
@@ -68,29 +69,36 @@ const AdminProducts = () => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Products</h1>
-        <Button asChild className="rounded-sm">
-          <Link to="/admin/products/new">
-            <Plus className="mr-2 h-4 w-4" />
-            ADD NEW PRODUCT
-          </Link>
-        </Button>
-      </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {products.map((product) => (
-            <div key={product._id} className="relative group">
-              <AProductCard key={product._id} product={product} />
-              <div className="absolute bottom-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Link
-                  to={`/admin/products/${product._id}`}
-                  className="inline-flex items-center justify-center px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
-                >
-                  Edit
-                </Link>
-              </div>
-            </div>
-          ))}
+        <div className="flex gap-3">
+          <Button asChild className="rounded-sm">
+            <Link to="/admin/categories">
+              Manage Categories
+            </Link>
+          </Button>
+          <Button asChild className="rounded-sm">
+            <Link to="/admin/products/new">
+              <Plus className="mr-2 h-4 w-4" />
+              ADD NEW PRODUCT
+            </Link>
+          </Button>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {products.map((product) => (
+          <div key={product._id} className="relative group">
+            <AProductCard product={product} />
+            <div className="absolute bottom-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Link
+                to={`/admin/products/${product._id}`}
+                className="inline-flex items-center justify-center px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
+              >
+                Edit
+              </Link>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

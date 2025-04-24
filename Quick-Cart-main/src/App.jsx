@@ -8,6 +8,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { CartProvider } from "./context/CartContext";
 import { UserProvider } from "./context/UserContext";
 import { AdminProvider } from "./context/AdminContext";
+import CategoryManager from "./components/admin/product/CategoryManager";
 
 // Pages
 import Profile from "./pages/Profile";
@@ -70,6 +71,7 @@ const router = createBrowserRouter([
       { path: "orders", element: <AdminOrderList /> },
       { path: "orders/:orderId", element: <AdminOrderDetails /> },
       { path: "customer-queries", element: <CustomerQueries /> },
+      { path: "categories", element: <CategoryManager /> },
     ],
   },
   { path: "*", element: <NotFound /> },

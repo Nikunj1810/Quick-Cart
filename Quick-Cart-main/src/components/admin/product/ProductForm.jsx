@@ -223,6 +223,7 @@ const AddProductForm = ({ product = null, onSubmit = () => {}, categories = [] }
   };
 
   return (
+    
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
       <Input placeholder="Product Name" {...register("name")} />
       {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
@@ -321,3 +322,5 @@ const AddProductForm = ({ product = null, onSubmit = () => {}, categories = [] }
 };
 
 export default AddProductForm;
+
+
